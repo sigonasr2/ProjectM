@@ -170,6 +170,77 @@ function runTests() {
 			}
 		}(),true)
 	})
+	.it("Bot obeys writer tape rules - Has correct tape when overwriting",()=>{
+		expect(function(){
+			loadLevel(LEVEL3,0,1)
+			BOT_TAPE=[{color:BLUE},{color:RED}]
+			for (var i=0;i<2;i++) {runBot(true)}
+			if (BOT_TAPE.length===2&&BOT_TAPE[0].color===RED) {
+				return true
+			} else {
+				return false
+			}
+		}(),true)
+	})
+	.it("Bot goes forward if no color matched.",()=>{
+		expect(function(){
+			loadLevel(LEVEL2,0,2)
+			BOT_TAPE = [{color:YELLOW}]
+			for (var i=0;i<2;i++) {runBot(true)}
+			if (BOT_X===2&&BOT_Y===2) {
+				return true
+			} else {
+				return false
+			}
+		}(),true)
+	})
+	.it("Bot goes right when approaching a double belt (Left->Right) from the left",()=>{
+		expect(function(){
+			loadLevel(LEVEL4,0,2)
+			for (var i=0;i<2;i++) {runBot(true)}
+			if (BOT_X===2&&BOT_Y===2) {
+				return true
+			} else {
+				return false
+			}
+		}(),true)
+	})
+	.it("Bot goes down when approaching a double belt (Up->Down) from the top",()=>{
+		expect(function(){
+			loadLevel(LEVEL4,1,1)
+			BOT_DIR=DOWN
+			for (var i=0;i<2;i++) {runBot(true)}
+			if (BOT_X===1&&BOT_Y===3) {
+				return true
+			} else {
+				return false
+			}
+		}(),true)
+	})
+	.it("Bot goes right when approaching a double belt (Left->Right) from the Right",()=>{
+		expect(function(){
+			loadLevel(LEVEL4,2,2)
+			BOT_DIR=LEFT
+			for (var i=0;i<2;i++) {runBot(true)}
+			if (BOT_X===2&&BOT_Y===2) {
+				return true
+			} else {
+				return false
+			}
+		}(),true)
+	})
+	.it("Bot goes up when approaching a double belt (Down->Up) from the Bottom",()=>{
+		expect(function(){
+			loadLevel(LEVEL4,2,4)
+			BOT_DIR=UP
+			for (var i=0;i<2;i++) {runBot(true)}
+			if (BOT_X===2&&BOT_Y===2) {
+				return true
+			} else {
+				return false
+			}
+		}(),true)
+	})
 	
 	
 	console.log("==============")

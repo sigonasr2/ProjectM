@@ -70,6 +70,12 @@ var LEVEL3 = [
 	[{},{...WRITERDOWN},{},{},{},],
 	[{},{...BELTRIGHT},{},{},{},],
 	[{},{},{},{},{},],]
+var LEVEL4 = [
+	[{},{},{},{},{},],
+	[{},{},{},{},{},],
+	[{},{...BELTRIGHT,direction2:DOWN},{},{},{},],
+	[{},{},{...BELTUP,direction2:LEFT},{},{},],
+	[{},{},{},{},{},],]
 
 var gameGrid= []
 
@@ -92,10 +98,26 @@ function runBot(testing) {
 		//console.log("Update")
 		var nextSquare = {}
 		switch (BOT_DIR) {
-			case UP:{nextSquare = gameGrid[--BOT_Y][BOT_X];}break;
-			case LEFT:{nextSquare = gameGrid[BOT_Y][--BOT_X];}break;
-			case RIGHT:{nextSquare = gameGrid[BOT_Y][++BOT_X];}break;
-			case DOWN:{nextSquare = gameGrid[++BOT_Y][BOT_X];}break;
+			case UP:{
+				nextSquare = gameGrid[--BOT_Y][BOT_X];
+				BOT_DIR=(nextSquare.direction2 &&
+				(nextSquare.direction2===UP||nextSquare.direction2===DOWN))?nextSquare.direction2:nextSquare.direction
+			}break;
+			case LEFT:{
+				nextSquare = gameGrid[BOT_Y][--BOT_X];
+				BOT_DIR=(nextSquare.direction2 &&
+				(nextSquare.direction2===RIGHT||nextSquare.direction2===LEFT))?nextSquare.direction2:nextSquare.direction
+			}break;
+			case RIGHT:{
+				nextSquare = gameGrid[BOT_Y][++BOT_X];
+				BOT_DIR=(nextSquare.direction2 &&
+				(nextSquare.direction2===RIGHT||nextSquare.direction2===LEFT))?nextSquare.direction2:nextSquare.direction
+			}break;
+			case DOWN:{
+				nextSquare = gameGrid[++BOT_Y][BOT_X];
+				BOT_DIR=(nextSquare.direction2 &&
+				(nextSquare.direction2===UP||nextSquare.direction2===DOWN))?nextSquare.direction2:nextSquare.direction
+			}break;
 		}
 		if (nextSquare.direction!==undefined) {
 			switch (nextSquare.type) {
@@ -115,12 +137,13 @@ function runBot(testing) {
 					}
 				}break;
 				case "WRITER":{
-					AppendTape(nextSquare.color)
+					if (nextSquare.overwrite) {
+						OverwriteTape(nextSquare.color)
+					} else {
+						AppendTape(nextSquare.color)
+					}
 					BOT_DIR = nextSquare.direction
 				}break;
-				default:{
-					BOT_DIR = nextSquare.direction
-				}
 			}
 			//console.log("Direction is now "+BOT_DIR)
 		} else {
@@ -190,6 +213,9 @@ function ConsumeTape() {
 }
 function AppendTape(col) {
 	BOT_TAPE.push({color:col})
+}
+function OverwriteTape(col) {
+	BOT_TAPE[0]={color:col}
 }
 
 function LeftOf(dir) {
