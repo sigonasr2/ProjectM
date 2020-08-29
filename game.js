@@ -2,6 +2,7 @@ var canvas;
 
 const WAITING = 0;
 const RUNNING = 1;
+const REVIEWING = 2;
 
 const UP = 0;
 const RIGHT = 1;
@@ -17,9 +18,14 @@ const PINK = 5;
 const BLACK = 6;
 const GRAY = 7;
 
-var BOT_X = 0
-var BOT_Y = 0
+const ALIVE = 0;
+const DEAD = 1;
+
+var BOT_X = -1
+var BOT_Y = -1
 var BOT_DIR = RIGHT
+var BOT_STATE = ALIVE
+var BOT_TAPE = [{color:RED},{color:BLUE}]
 
 var BELTDOWN = {type:"BELT",direction:DOWN/*,direction2 - defines a secondary direction. For two belts at once.*/}
 var BELTRIGHT = {type:"BELT",direction:RIGHT}
@@ -38,13 +44,25 @@ var WRITERUP = {type:"WRITER",direction:UP,color1:RED,color2:BLUE}
 var lastGameUpdate = 0;
 var gameSpeed = 1000/1;
 
-var gameState=WAITING;
+var gameState=RUNNING;
 
+var LEVEL0 = [
+	[{},{},{},{},{},],
+	[{},{},{},{},{},],
+	[{},{},{},{},{},],
+	[{},{},{},{},{},],
+	[{},{},{},{},{},],]
 var LEVEL1 = [
 	[{},{},{...BELTDOWN},{...BELTLEFT},{...BELTLEFT},],
-	[{},{},{},{},BELTUP,],
+	[{},{},{},{},{...BELTUP},],
 	[{},{...BELTDOWN},{},{},{...BELTUP},],
 	[{},{...BELTRIGHT},{...BELTRIGHT},{...BELTRIGHT},{...BELTUP},],
+	[{},{},{},{},{},],]
+var LEVEL2 = [
+	[{},{},{},{},{},],
+	[{},{...BELTRIGHT},{},{},{},], //BLUE
+	[{},{...BRANCHRIGHT},{},{},{},],
+	[{},{...BELTRIGHT},{},{},{},], //RED
 	[{},{},{},{},{},],]
 
 var gameGrid= []
@@ -69,14 +87,36 @@ function runBot() {
 		
 		var nextSquare = {}
 		switch (BOT_DIR) {
-			case UP:{nextSquare = grid[y-1][x];BOT_Y--}break;
-			case LEFT:{nextSquare = grid[y][x-1];BOT_X--}break;
-			case RIGHT:{nextSquare = grid[y][x+1];BOT_X++}break;
-			case DOWN:{nextSquare = grid[y+1][x];BOT_Y++}break;
+			case UP:{nextSquare = gameGrid[--BOT_Y][BOT_X];}break;
+			case LEFT:{nextSquare = gameGrid[BOT_Y][--BOT_X];}break;
+			case RIGHT:{nextSquare = gameGrid[BOT_Y][++BOT_X];}break;
+			case DOWN:{nextSquare = gameGrid[++BOT_Y][BOT_X];}break;
 		}
-		if (nextSquare.direction) {
-			BOT_DIR = nextSquare.direction
+		if (nextSquare.direction!==undefined) {
+			
+			if (nextSquare.type==="BRANCH") {
+				//console.log("Branch found")
+				if (BOT_TAPE[0].color===nextSquare.color1) {
+					console.log("Matches color1")
+					//Move towards left side of the branch.
+					BOT_DIR = LeftOf(nextSquare.direction)
+					ConsumeTape()
+				} else
+				if (BOT_TAPE[0].color===nextSquare.color2) {
+					console.log("Matches color2")
+					//Move towards left side of the branch.
+					BOT_DIR = RightOf(nextSquare.direction)
+					ConsumeTape()
+				}
+			} else {
+				BOT_DIR = nextSquare.direction
+			}
+			console.log("Direction is now "+BOT_DIR)
+		} else {
+			gameState = REVIEWING
+			BOT_STATE = DEAD
 		}
+		renderGame()
 	}
 }
 
@@ -91,15 +131,38 @@ function setupGame() {
 	canvas.style.height="100%"
 	document.getElementById("game").appendChild(canvas)
 	
-	gameGrid = [...createGrid(5,5)]
-	placeBot(0,2)
-	console.log(gameGrid)
+	//gameGrid = [...createGrid(5,5)]
+}
+
+function loadLevel(level,botx,boty) {
+	placeBot(botx,boty)
+	gameGrid = deepCopy(level)
+}
+
+function deepCopy(arr) {
+	var newarr = []
+	for (var i=0;i<arr.length;i++) {
+		newarr[i] = []
+		for (var j=0;j<arr[i].length;j++) {
+			newarr[i][j]={...arr[i][j]}
+		}
+	}
+	return newarr
 }
 
 function step() {
 	if (gameState===RUNNING) {
 		runBot()
 	}
+}
+
+function renderGame() {
+	var displayGrid = []
+	displayGrid = deepCopy(gameGrid)
+	if (BOT_X!==-1&&BOT_Y!==-1) {
+		displayGrid[BOT_Y][BOT_X]["BOT"]=true
+	}
+	console.log(displayGrid)
 }
 
 function draw() {
@@ -111,7 +174,20 @@ function draw() {
 	ctx.stroke();
 }
 
+function ConsumeTape() {
+	BOT_TAPE.shift()
+}
+
+function LeftOf(dir) {
+	return (dir+1)%4
+}
+function RightOf(dir) {
+	if (dir===0) {dir=4}
+	return (dir-1)%4
+}
+
 setupGame();
+loadLevel(LEVEL2,0,2)
 setInterval(()=>{
 	step()
 	draw()
