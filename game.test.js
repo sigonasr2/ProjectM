@@ -15,7 +15,7 @@ var TestSuite;
 class describe {
 	constructor(testname) {
 		this.testname=testname
-		this.beforecb = undefined;
+		this.beforecb = ()=>{};
 		this.cb = undefined;
 		this.totaltests = 0;
 		this.passedtests = 0;
@@ -46,7 +46,7 @@ class describe {
 
 function expect(testval1,testval2,name) {
 	if (testval1!==testval2) {
-		console.log("    Test Failed!"+" ("+(new Date().getTime()-TestSuite.starttime)+"ms)"+((name)?` - ${name}`:""))
+		console.log("    Test Failed! Expected "+testval2+" but got "+testval1+". ("+(new Date().getTime()-TestSuite.starttime)+"ms)"+((name)?` - ${name}`:""))
 		TestSuite.totaltests++
 		testsPass=false
 	} else 
@@ -453,6 +453,15 @@ function runTests() {
 	})
 	.showResults()
 	
+	TestSuite = new describe("Color Hex Conversion")
+	TestSuite
+	.it("converts a color to hex",()=>{
+		expect(colorToHex(0,0,0),"#000000")
+		expect(colorToHex(66, 135, 245),"#4287f5")
+		expect(colorToHex(245, 66, 221),"#f542dd")
+		expect(colorToHex(58, 79, 55),"#3a4f37")
+	}).showResults()
+	
 	if (testsPass===undefined) {
 		testsPass=true
 	}
@@ -469,16 +478,22 @@ function runGame() {
 	console.log("Running")
 }
 
-loadScript("game.js",runTests)
+var RUNTESTS = true;
 
-initializeGame()
+if (RUNTESTS) {
+	loadScript("game.js",runTests)
 
-function initializeGame() {
-	if (testsPass) {
-		runGame()
-	} else {
-		setTimeout(()=>{
-			initializeGame()
-		},1000)
+	initializeGame()
+
+	function initializeGame() {
+		if (testsPass) {
+			runGame()
+		} else {
+			setTimeout(()=>{
+				initializeGame()
+			},1000)
+		}
 	}
+} else {
+	loadScript("game.js",runGame)
 }
