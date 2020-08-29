@@ -10,12 +10,16 @@ function loadScript(url, callback)
 }
 
 var testsPass=undefined;
+var TestSuite;
 
 class describe {
 	constructor(testname) {
 		this.testname=testname
 		this.beforecb = undefined;
 		this.cb = undefined;
+		this.totaltests = 0;
+		this.passedtests = 0;
+		this.starttime = 0;
 		console.log(this.testname)
 	}
 	
@@ -25,6 +29,7 @@ class describe {
 	}
 	
 	it = (checkname,cb)=>{
+		this.starttime = new Date().getTime()
 		console.log("->"+checkname)
 		this.beforecb()
 		this.cb=cb;
@@ -35,11 +40,14 @@ class describe {
 
 function expect(testval1,testval2,test) {
 	if (testval1!==testval2) {
-		console.log("    Test Failed!")
+		console.log("    Test Failed!"+" ("+(new Date().getTime()-TestSuite.starttime)+"ms)")
+		TestSuite.totaltests++
 		testsPass=false
 	} else 
 	{
-		console.log("    Test Passed!")
+		TestSuite.totaltests++
+		TestSuite.passedtests++
+		console.log("    Test Passed!"+" ("+(new Date().getTime()-TestSuite.starttime)+"ms)")
 	}
 }
 
@@ -56,7 +64,8 @@ function AllBlankSpaces(level) {
 
 function runTests() {
 	console.log("Running test suite...")
-	new describe("Bot moving")
+	TestSuite = new describe("Bot moving")
+	TestSuite
 	.beforeEach(()=>{
 		gameGrid=[]
 		gameState=WAITING
@@ -68,12 +77,9 @@ function runTests() {
 		lastGameUpdate=0
 	})
 	.it("Blank level exists.",()=>{
-		var starttime = new Date().getTime()
 		expect(AllBlankSpaces(LEVEL0),true)
-		console.log("    ("+(new Date().getTime()-starttime)+"ms)")
 	})
 	.it("Bot moves to the right initially.",()=>{
-		var starttime = new Date().getTime()
 		expect(function(){
 			gameGrid=createGrid(5,5)
 			placeBot(0,2)
@@ -84,10 +90,8 @@ function runTests() {
 				return false
 			}
 		}(),true)
-		console.log("    ("+(new Date().getTime()-starttime)+"ms)")
 	})
 	.it("Bot obeys conveyor belt rules",()=>{
-		var starttime = new Date().getTime()
 		expect(function(){
 			loadLevel(LEVEL1,0,2)
 			for (var i=0;i<11;i++) {runBot(true)}
@@ -97,10 +101,8 @@ function runTests() {
 				return false
 			}
 		}(),true)
-		console.log("    ("+(new Date().getTime()-starttime)+"ms)")
 	})
 	.it("Bot obeys branch rules",()=>{
-		var starttime = new Date().getTime()
 		expect(function(){
 			loadLevel(LEVEL2,0,2)
 			for (var i=0;i<3;i++) {runBot(true)}
@@ -110,10 +112,8 @@ function runTests() {
 				return false
 			}
 		}(),true)
-		console.log("    ("+(new Date().getTime()-starttime)+"ms)")
 	})
 	.it("Bot obeys branch rules with different colored tape.",()=>{
-		var starttime = new Date().getTime()
 		expect(function(){
 			loadLevel(LEVEL2,0,2)
 			BOT_TAPE = [{color:BLUE}]
@@ -124,9 +124,57 @@ function runTests() {
 				return false
 			}
 		}(),true)
-		console.log("    ("+(new Date().getTime()-starttime)+"ms)")
+	})
+	.it("Bot tape is reduced by 1 when passing through a branch.",()=>{
+		expect(function(){
+			loadLevel(LEVEL2,0,2)
+			for (var i=0;i<3;i++) {runBot(true)}
+			if (BOT_TAPE.length===1&&BOT_TAPE[0].color===BLUE) {
+				return true
+			} else {
+				return false
+			}
+		}(),true)
+	})
+	.it("Bot tape is reduced by 1 when passing through a different branch.",()=>{
+		expect(function(){
+			loadLevel(LEVEL2,0,2)
+			BOT_TAPE = [{color:BLUE}]
+			for (var i=0;i<3;i++) {runBot(true)}
+			if (BOT_TAPE.length===0) {
+				return true
+			} else {
+				return false
+			}
+		}(),true)
+	})
+	.it("Bot obeys writer movement rules",()=>{
+		expect(function(){
+			loadLevel(LEVEL3,0,2)
+			for (var i=0;i<3;i++) {runBot(true)}
+			if (BOT_X===2&&BOT_Y===3) {
+				return true
+			} else {
+				return false
+			}
+		}(),true)
+	})
+	.it("Bot obeys writer tape rules - Has correct tape when appending",()=>{
+		expect(function(){
+			loadLevel(LEVEL3,0,2)
+			for (var i=0;i<3;i++) {runBot(true)}
+			if (BOT_TAPE.length===3&&BOT_TAPE[2].color===RED) {
+				return true
+			} else {
+				return false
+			}
+		}(),true)
 	})
 	
+	
+	console.log("==============")
+	console.log("TEST RESULTS: "+TestSuite.passedtests+" passed, "+(TestSuite.totaltests-TestSuite.passedtests)+" failed, "+TestSuite.totaltests+" total")
+	console.log("==============")
 	if (testsPass===undefined) {
 		testsPass=true
 	}

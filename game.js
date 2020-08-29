@@ -35,10 +35,10 @@ var BRANCHDOWN = {type:"BRANCH",direction:DOWN,color1:RED,color2:BLUE} //color 1
 var BRANCHLEFT = {type:"BRANCH",direction:LEFT,color1:RED,color2:BLUE}
 var BRANCHRIGHT = {type:"BRANCH",direction:RIGHT,color1:RED,color2:BLUE}
 var BRANCHUP = {type:"BRANCH",direction:UP,color1:RED,color2:BLUE}
-var WRITERDOWN = {type:"WRITER",direction:DOWN,color1:RED,color2:BLUE} //color 1 points left, color 2 points right
-var WRITERLEFT = {type:"WRITER",direction:LEFT,color1:RED,color2:BLUE}
-var WRITERRIGHT = {type:"WRITER",direction:RIGHT,color1:RED,color2:BLUE}
-var WRITERUP = {type:"WRITER",direction:UP,color1:RED,color2:BLUE}
+var WRITERDOWN = {type:"WRITER",direction:DOWN,color:RED/*overwrite - if turned on, the writer overwrites the current tape position instead of appending.*/}
+var WRITERLEFT = {type:"WRITER",direction:LEFT,color:RED}
+var WRITERRIGHT = {type:"WRITER",direction:RIGHT,color:RED}
+var WRITERUP = {type:"WRITER",direction:UP,color:RED}
 
 
 var lastGameUpdate = 0;
@@ -63,6 +63,12 @@ var LEVEL2 = [
 	[{},{...BELTRIGHT},{},{},{},], //BLUE
 	[{},{...BRANCHRIGHT},{},{},{},],
 	[{},{...BELTRIGHT},{},{},{},], //RED
+	[{},{},{},{},{},],]
+var LEVEL3 = [
+	[{},{},{},{},{},],
+	[{},{...WRITERUP,overwrite:true},{},{},{},],
+	[{},{...WRITERDOWN},{},{},{},],
+	[{},{...BELTRIGHT},{},{},{},],
 	[{},{},{},{},{},],]
 
 var gameGrid= []
@@ -92,23 +98,29 @@ function runBot(testing) {
 			case DOWN:{nextSquare = gameGrid[++BOT_Y][BOT_X];}break;
 		}
 		if (nextSquare.direction!==undefined) {
-			
-			if (nextSquare.type==="BRANCH") {
-				//console.log("Branch found")
-				if (BOT_TAPE[0].color===nextSquare.color1) {
-					//console.log("Matches color1")
-					//Move towards left side of the branch.
-					BOT_DIR = LeftOf(nextSquare.direction)
-					ConsumeTape()
-				} else
-				if (BOT_TAPE[0].color===nextSquare.color2) {
-					//console.log("Matches color2")
-					//Move towards left side of the branch.
-					BOT_DIR = RightOf(nextSquare.direction)
-					ConsumeTape()
+			switch (nextSquare.type) {
+				case "BRANCH":{
+					//console.log("Branch found")
+					if (BOT_TAPE[0].color===nextSquare.color1) {
+						//console.log("Matches color1")
+						//Move towards left side of the branch.
+						BOT_DIR = LeftOf(nextSquare.direction)
+						ConsumeTape()
+					} else
+					if (BOT_TAPE[0].color===nextSquare.color2) {
+						//console.log("Matches color2")
+						//Move towards left side of the branch.
+						BOT_DIR = RightOf(nextSquare.direction)
+						ConsumeTape()
+					}
+				}break;
+				case "WRITER":{
+					AppendTape(nextSquare.color)
+					BOT_DIR = nextSquare.direction
+				}break;
+				default:{
+					BOT_DIR = nextSquare.direction
 				}
-			} else {
-				BOT_DIR = nextSquare.direction
 			}
 			//console.log("Direction is now "+BOT_DIR)
 		} else {
@@ -175,6 +187,9 @@ function draw() {
 
 function ConsumeTape() {
 	BOT_TAPE.shift()
+}
+function AppendTape(col) {
+	BOT_TAPE.push({color:col})
 }
 
 function LeftOf(dir) {
