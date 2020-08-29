@@ -63,6 +63,9 @@ var GRID_H = 32
 var GRID_X = 20
 var GRID_Y = 20
 
+var LAST_MOUSE_X=0;
+var LAST_MOUSE_Y=0;
+
 
 var lastGameUpdate = 0;
 var gameSpeed = 1000/1;
@@ -297,6 +300,7 @@ function setupGame() {
 	canvas.height=320
 	document.getElementById("game").appendChild(canvas)
 	canvas.addEventListener("mousemove",updateMouse)
+	canvas.addEventListener("touchmove",updateMouse)
 	//gameGrid = [...createGrid(5,5)]
 }
 
@@ -330,6 +334,9 @@ function step() {
 
 function updateMouse(e) {
 	//console.log(getMousePos(canvas,e))
+	var mousepos = getMousePos(canvas,e)
+	LAST_MOUSE_X=mousepos.x
+	LAST_MOUSE_Y=mousepos.y
 }
 
 function getMousePos(canvas, evt) {
@@ -413,7 +420,7 @@ function draw() {
 	ctx.fillStyle="#000000"
 	ctx.stroke();
 	//drawImage(0,0,IMAGE_CONVEYOR,ctx,0)
-	drawImage(64,64,IMAGE_ARROW,ctx,0)
+	drawImage(LAST_MOUSE_X,LAST_MOUSE_Y,IMAGE_ARROW,ctx,0)
 }
 
 function ConsumeTape() {
