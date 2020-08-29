@@ -79,12 +79,11 @@ function createGrid(width,height) {
 	return grid
 }
 
-function runBot() {
+function runBot(testing) {
 	//console.log(new Date().getTime())
-	if (lastGameUpdate<new Date().getTime()) {
-		//console.log("Update")
+	if (lastGameUpdate<new Date().getTime()||testing) {
 		lastGameUpdate=new Date().getTime()+gameSpeed
-		
+		//console.log("Update")
 		var nextSquare = {}
 		switch (BOT_DIR) {
 			case UP:{nextSquare = gameGrid[--BOT_Y][BOT_X];}break;
@@ -97,13 +96,13 @@ function runBot() {
 			if (nextSquare.type==="BRANCH") {
 				//console.log("Branch found")
 				if (BOT_TAPE[0].color===nextSquare.color1) {
-					console.log("Matches color1")
+					//console.log("Matches color1")
 					//Move towards left side of the branch.
 					BOT_DIR = LeftOf(nextSquare.direction)
 					ConsumeTape()
 				} else
 				if (BOT_TAPE[0].color===nextSquare.color2) {
-					console.log("Matches color2")
+					//console.log("Matches color2")
 					//Move towards left side of the branch.
 					BOT_DIR = RightOf(nextSquare.direction)
 					ConsumeTape()
@@ -111,12 +110,12 @@ function runBot() {
 			} else {
 				BOT_DIR = nextSquare.direction
 			}
-			console.log("Direction is now "+BOT_DIR)
+			//console.log("Direction is now "+BOT_DIR)
 		} else {
 			gameState = REVIEWING
 			BOT_STATE = DEAD
 		}
-		renderGame()
+		if (!testing){renderGame()}
 	}
 }
 
@@ -185,11 +184,3 @@ function RightOf(dir) {
 	if (dir===0) {dir=4}
 	return (dir-1)%4
 }
-
-setupGame();
-loadLevel(LEVEL2,0,2)
-setInterval(()=>{
-	step()
-	draw()
-},1000/60)
-console.log("Running")
