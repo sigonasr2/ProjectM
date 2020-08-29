@@ -35,7 +35,7 @@ var BELTDOWN = {type:"BELT",direction:DOWN/*,direction2 - defines a secondary di
 var BELTRIGHT = {type:"BELT",direction:RIGHT}
 var BELTUP = {type:"BELT",direction:UP}
 var BELTLEFT = {type:"BELT",direction:LEFT}
-var BRANCHDOWN = {type:"BRANCH",direction:DOWN,color1:RED,color2:BLUE} //color 1 points left, color 2 points right
+var BRANCHDOWN = {type:"BRANCH",direction:DOWN,color1:RED,color2:BLUE} //color 1 points clockwise(right), color 2 points counter-clockwise(left)
 var BRANCHLEFT = {type:"BRANCH",direction:LEFT,color1:RED,color2:BLUE}
 var BRANCHRIGHT = {type:"BRANCH",direction:RIGHT,color1:RED,color2:BLUE}
 var BRANCHUP = {type:"BRANCH",direction:UP,color1:RED,color2:BLUE}
@@ -87,6 +87,20 @@ var STAGE1 = {
 	level:createGrid(5,5,4,2),
 	start:{x:0,y:2},
 	accept:(tape)=>true}
+var STAGE2 = {
+	name:"Blue Blue",
+	objective:"Accept only Blue Bots",
+	level:createGrid(5,5,4,2),
+	start:{x:0,y:2},
+	accept:(tape)=>{
+			for (var i=0;i<tape.length;i++) {
+				if (tape[i]!=="B") {
+					return false;
+				}
+			}
+			return true;
+		}
+	}
 
 var gameGrid= []
 
@@ -249,7 +263,7 @@ function resetBot(x,y,state,tape) {
 	gameState=state
 	BOT_STATE = ALIVE
 	BOT_DIR = RIGHT
-	BOT_TAPE=deepCopy(tape)
+	BOT_TAPE=tape
 	placeBot(x,y)
 }
 
@@ -301,6 +315,7 @@ function renderGame() {
 	if (BOT_X!==-1&&BOT_Y!==-1) {
 		displayGrid[BOT_Y][BOT_X]["BOT"]=true
 	}
+	console.log("Tape: "+BOT_TAPE)
 	console.log(displayGrid)
 }
 

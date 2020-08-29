@@ -355,6 +355,104 @@ function runTests() {
 	})
 	.showResults()
 	
+	
+	TestSuite = new describe("Stage 2")
+	TestSuite
+	.beforeEach(()=>{
+		resetGame()
+	})
+	.it("Stage 2 has a level",()=>{
+		expect(STAGE2.level===undefined,false,"Is defined")
+		expect(Array.isArray(STAGE2.level),true,"Is an array")
+		expect(STAGE2.level.length>0,true,"Cannot be empty")
+	})
+	.it("Stage 2 has a name",()=>{
+		expect(STAGE2.name===undefined,false,"Is defined")
+		expect(typeof(STAGE2.name),"string","Is a string")
+		expect(STAGE2.name.length>0,true,"Cannot be blank")
+	})
+	.it("Stage 2 has an objective",()=>{
+		expect(STAGE2.objective===undefined,false,"Is defined")
+		expect(typeof(STAGE2.objective),"string","Is a string")
+		expect(STAGE2.objective.length>0,true,"Cannot be blank")
+	})
+	.it("Stage 2 has a starting position",()=>{
+		expect(STAGE2.start===undefined,false,"Is defined")
+		expect(typeof(STAGE2.start),"object","Is an object")
+		expect(STAGE2.start.x===undefined,false,"Must have an X coordinate")
+		expect(STAGE2.start.y===undefined,false,"Must have a Y coordinate")
+	})
+	.it("Stage 2 has an acceptance condition",()=>{
+		expect(STAGE2.accept===undefined,false)
+		expect(typeof(STAGE2.accept),"function")
+	})
+	.it("loadStage sets up Stage 2",()=>{
+		loadStage(STAGE2)
+		expect(gameGrid.length===STAGE2.level.length,true,"Height of stage is equal")
+		expect(gameGrid[0].length===STAGE2.level[0].length,true,"Width of stage is equal")
+	})
+	.it("current stage set to Stage 2",()=>{
+		loadStage(STAGE2)
+		expect(gameStage===STAGE2,true)
+	})
+	.it("accept only blue bots for Stage 2.",()=>{
+		loadStage(STAGE2)
+		expect(gameStage.accept("BBB"),true,"Expect true for BBB")
+		expect(gameStage.accept("RB"),false,"Expect false for RB")
+		expect(gameStage.accept("BRBR"),false,"Expect false for BRBR")
+		expect(gameStage.accept("BBBBBBBBBBBB"),true,"Expect true for BBBBBBBBBBBB")
+	})
+	.it("bot fails at the start.",()=>{
+		loadStage(STAGE2)
+		runBot(true)
+		expect(gameState===REVIEWING,true)
+	})
+	.it("When TESTING state is on, the game should test the current level for cases expecting to pass, but fail and create 3 of them if possible.",()=>{
+		loadStage(STAGE2)
+		expect(BOT_QUEUE.length===0,true,"Bot queue should be empty.")
+		generateBotQueue()
+		expect(BOT_QUEUE.length===0&&gameState!==TESTING,true,"Bot queue should not be modified while state is not TESTING")
+		gameState=TESTING
+		generateBotQueue()
+		expect(BOT_QUEUE.length===3,true,"There should be 3 bots in queue for an unbuilt level, as there are cases that do not pass.")
+	})
+	.it("A stage should have an Exit.",()=>{
+		loadStage(STAGE2)
+		var hasAnExit=()=>{
+			for (var y=0;y<gameGrid.length;y++) {
+				for (var x=0;x<gameGrid[y].length;x++) {
+					if (gameGrid[y][x].type==="EXIT") {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+		expect(hasAnExit(),true)
+	})
+	.it("A bot reaching the exit should set the state to FINISH.",()=>{
+		loadStage(STAGE2)
+		placeBot(3,2)
+		runBot(true)
+		expect(gameState===FINISH,true)
+	})
+	.it("Run a TESTING state to see if an acceptable player-built level has no bots in queue.",()=>{
+		loadStage(STAGE2)
+		gameGrid=[
+			[{},{},{},{},{},],
+			[{},{...BELTDOWN},{},{},{},],
+			[{},{...BRANCHRIGHT},{...BELTRIGHT},{...BELTRIGHT},{type:"EXIT"},],
+			[{},{},{},{},{},],
+			[{},{},{},{},{},],
+		]
+		expect(BOT_QUEUE.length===0,true,"Bot queue should be empty.")
+		gameState=TESTING
+		generateBotQueue()
+		//console.log(BOT_QUEUE)
+		expect(BOT_QUEUE.length===0,true,"There should be 0 bots in queue for a good level, as all bots are supposed to pass.")
+	})
+	.showResults()
+	
 	if (testsPass===undefined) {
 		testsPass=true
 	}
