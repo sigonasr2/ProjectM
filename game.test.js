@@ -11,6 +11,8 @@ function loadScript(url, callback)
 
 var testsPass=undefined;
 var TestSuite;
+var totalTests = 0;
+var totalTestsPassed = 0;
 
 class describe {
 	constructor(testname) {
@@ -48,11 +50,14 @@ function expect(testval1,testval2,name) {
 	if (testval1!==testval2) {
 		console.log("    Test Failed! Expected "+testval2+" but got "+testval1+". ("+(new Date().getTime()-TestSuite.starttime)+"ms)"+((name)?` - ${name}`:""))
 		TestSuite.totaltests++
+		totalTests++
 		testsPass=false
 	} else 
 	{
 		TestSuite.totaltests++
 		TestSuite.passedtests++
+		totalTests++
+		totalTestsPassed++
 		console.log("    Test Passed!"+" ("+(new Date().getTime()-TestSuite.starttime)+"ms)"+((name)?` - ${name}`:""))
 	}
 }
@@ -462,6 +467,8 @@ function runTests() {
 		expect(colorToHex(58, 79, 55),"#3a4f37")
 	}).showResults()
 	
+	console.log("----------------------")
+	console.log("ALL TESTS: "+totalTestsPassed+" passed, "+(totalTests-totalTestsPassed)+" failed, "+totalTests+" total")
 	if (testsPass===undefined) {
 		testsPass=true
 	}
