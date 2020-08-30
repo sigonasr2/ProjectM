@@ -66,6 +66,22 @@ var GRID_Y = 20
 var LAST_MOUSE_X=0;
 var LAST_MOUSE_Y=0;
 
+var SUBMENU = {
+	visible:false,
+	width:0,
+	height:0,
+	buttons:[]
+}
+
+var CONVEYOR_BUILD_BUTTON = {img:IMAGE_CONVEYOR,x:-1,y:-1,w:-1,h:-1}
+var BRANCH_BUILD_BUTTON = {img:IMAGE_BRANCH,x:-1,y:-1,w:-1,h:-1}
+var WRITER_BUILD_BUTTON = {img:IMAGE_WRITER,x:-1,y:-1,w:-1,h:-1}
+
+var MENU = {
+	visible:true,
+	buttons:[CONVEYOR_BUILD_BUTTON,BRANCH_BUILD_BUTTON,WRITER_BUILD_BUTTON]
+}
+
 
 var lastGameUpdate = 0;
 var gameSpeed = 1000/1;
@@ -436,7 +452,34 @@ function draw() {
 	ctx.fillStyle="#000000"
 	ctx.stroke();
 	//drawImage(0,0,IMAGE_CONVEYOR,ctx,0)
-	drawImage(LAST_MOUSE_X,LAST_MOUSE_Y,IMAGE_ARROW,ctx,0)
+	//drawImage(LAST_MOUSE_X,LAST_MOUSE_Y,IMAGE_ARROW,ctx,0)
+	RenderMenu(ctx)
+}
+
+function RenderMenu(ctx) {
+	if (MENU.visible) {
+		ctx.fillStyle="#20424a"
+		ctx.fillRect(0,canvas.height*0.8,canvas.width,canvas.height*0.2)
+		var buttonX = 16
+		for (var button of MENU.buttons) {
+			if (button===WRITER_BUILD_BUTTON) {
+				AddButton(button.img,buttonX,canvas.height*0.8+16,ctx,button,(new Date().getTime()/50)%360)
+			} else {
+				AddButton(button.img,buttonX,canvas.height*0.8+16,ctx,button,0)
+			}
+			buttonX+=48
+		}
+	}
+}
+
+function AddButton(img,x,y,ctx,button,rot=0) {
+	ctx.fillStyle="#b5b5b5"
+	ctx.fillRect(x,y,32,32)
+	button.x=x
+	button.y=y
+	button.w=32
+	button.h=32
+	drawImage(x+16,y+16,img,ctx,rot)
 }
 
 function ConsumeTape() {
