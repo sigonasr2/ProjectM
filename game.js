@@ -334,6 +334,7 @@ function step() {
 
 function updateMouse(e) {
 	//console.log(getMousePos(canvas,e))
+	e.preventDefault()
 	var mousepos = getMousePos(canvas,e)
 	LAST_MOUSE_X=mousepos.x
 	LAST_MOUSE_Y=mousepos.y
