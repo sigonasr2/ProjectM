@@ -23,26 +23,24 @@ class describe {
 		this.passedtests = 0;
 		this.starttime = 0;
 		console.log(this.testname)
-	}
 	
-	beforeEach = (cb)=>{
-		this.beforecb = cb
-		return this
-	}
-	
-	it = (checkname,cb)=>{
-		this.starttime = new Date().getTime()
-		console.log("->"+checkname)
-		this.beforecb()
-		this.cb=cb;
-		this.cb()
-		return this
-	}
-	
-	showResults = () =>{
-		console.log("==============")
-		console.log("TEST RESULTS: "+TestSuite.passedtests+" passed, "+(TestSuite.totaltests-TestSuite.passedtests)+" failed, "+TestSuite.totaltests+" total")
-		console.log("==============")
+		this.beforeEach = (cb)=>{
+			this.beforecb = cb
+			return this
+		}
+		this.it = (checkname,cb)=>{
+			this.starttime = new Date().getTime()
+			console.log("->"+checkname)
+			this.beforecb()
+			this.cb=cb;
+			this.cb()
+			return this
+		}
+		this.showResults = () =>{
+			console.log("==============")
+			console.log("TEST RESULTS: "+TestSuite.passedtests+" passed, "+(TestSuite.totaltests-TestSuite.passedtests)+" failed, "+TestSuite.totaltests+" total")
+			console.log("==============")
+		}
 	}
 }
 
