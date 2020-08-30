@@ -301,7 +301,17 @@ function setupGame() {
 	document.getElementById("game").appendChild(canvas)
 	canvas.addEventListener("mousemove",updateMouse)
 	canvas.addEventListener("touchmove",updateMouse)
+	canvas.addEventListener("touchstart",clickEvent)
+	canvas.addEventListener("touchend",releaseEvent)
 	//gameGrid = [...createGrid(5,5)]
+}
+
+function clickEvent(e) {
+	console.log("Click")
+}
+
+function releaseEvent(e) {
+	console.log("Release")
 }
 
 function loadLevel(level,botx,boty) {
@@ -335,6 +345,7 @@ function step() {
 function updateMouse(e) {
 	//console.log(getMousePos(canvas,e))
 	e.preventDefault()
+	console.log("Move")
 	var mousepos = getMousePos(canvas,e)
 	LAST_MOUSE_X=mousepos.x
 	LAST_MOUSE_Y=mousepos.y
