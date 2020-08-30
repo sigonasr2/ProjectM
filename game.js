@@ -301,6 +301,9 @@ function setupGame() {
 	document.getElementById("game").appendChild(canvas)
 	canvas.addEventListener("mousemove",updateMouse)
 	canvas.addEventListener("touchmove",updateMouse)
+	var testLog = document.createElement("p");
+	testLog.innerHTML="Test"
+	document.getElementById("game").appendChild(testLog)
 	//gameGrid = [...createGrid(5,5)]
 }
 
