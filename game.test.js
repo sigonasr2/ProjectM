@@ -485,20 +485,24 @@ function runGame() {
 
 var RUNTESTS = true;
 
-if (RUNTESTS) {
-	loadScript("game.js",runTests)
+loadScript("image_data.js",gameLoader)
 
-	initializeGame()
+function gameLoader() {
+	if (RUNTESTS) {
+		loadScript("game.js",runTests)
 
-	function initializeGame() {
-		if (testsPass) {
-			runGame()
-		} else {
-			setTimeout(()=>{
-				initializeGame()
-			},1000)
+		initializeGame()
+
+		function initializeGame() {
+			if (testsPass) {
+				runGame()
+			} else {
+				setTimeout(()=>{
+					initializeGame()
+				},1000)
+			}
 		}
+	} else {
+		loadScript("game.js",runGame)
 	}
-} else {
-	loadScript("game.js",runGame)
 }
