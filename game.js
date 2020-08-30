@@ -307,11 +307,9 @@ function setupGame() {
 }
 
 function clickEvent(e) {
-	console.log("Click")
 }
 
 function releaseEvent(e) {
-	console.log("Release")
 }
 
 function loadLevel(level,botx,boty) {
@@ -345,7 +343,6 @@ function step() {
 function updateMouse(e) {
 	//console.log(getMousePos(canvas,e))
 	e.preventDefault()
-	console.log("Move")
 	var mousepos = getMousePos(canvas,e)
 	LAST_MOUSE_X=mousepos.x
 	LAST_MOUSE_Y=mousepos.y
@@ -353,10 +350,17 @@ function updateMouse(e) {
 
 function getMousePos(canvas, evt) {
 	var rect = canvas.getBoundingClientRect();
-	return {
-	  x: evt.clientX - rect.left,
-	  y: evt.clientY - rect.top
-	};
+	if (evt.changedTouches) {
+		return {
+		  x: evt.changedTouches[0].clientX - rect.left,
+		  y: evt.changedTouches[0].clientY - rect.top
+		};
+	} else {
+		return {
+		  x: evt.clientX - rect.left,
+		  y: evt.clientY - rect.top
+		};
+	}
 }
 
 function renderGame() {
