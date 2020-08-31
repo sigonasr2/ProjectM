@@ -43,23 +43,23 @@ var WRITERLEFT = {type:"WRITER",direction:LEFT,color:RED}
 var WRITERRIGHT = {type:"WRITER",direction:RIGHT,color:RED}
 var WRITERUP = {type:"WRITER",direction:UP,color:RED}
 
-var DEF_BRANCHUP_RB = {img:IMAGE_BRANCH,color1:RED,color2:BLUE}
-var DEF_BRANCHUP_BR = {img:IMAGE_BRANCH,color1:BLUE,color2:RED}
-var DEF_BRANCHUP_GY = {img:IMAGE_BRANCH,color1:GREEN,color2:YELLOW}
-var DEF_BRANCHUP_YG = {img:IMAGE_BRANCH,color1:YELLOW,color2:GREEN}
-var DEF_BRANCHUP_PPI = {img:IMAGE_BRANCH,color1:PURPLE,color2:PINK}
-var DEF_BRANCHUP_PIP = {img:IMAGE_BRANCH,color1:PINK,color2:PURPLE}
-var DEF_BRANCHUP_BLGR = {img:IMAGE_BRANCH,color1:BLACK,color2:GRAY}
-var DEF_BRANCHUP_GRBL = {img:IMAGE_BRANCH,color1:GRAY,color2:BLACK}
-var DEF_WRITERRIGHT_R = {img:IMAGE_WRITER,color1:RED}
-var DEF_WRITERRIGHT_B = {img:IMAGE_WRITER,color1:BLUE}
-var DEF_WRITERRIGHT_G = {img:IMAGE_WRITER,color1:GREEN}
-var DEF_WRITERRIGHT_Y = {img:IMAGE_WRITER,color1:YELLOW}
-var DEF_WRITERRIGHT_P = {img:IMAGE_WRITER,color1:PURPLE}
-var DEF_WRITERRIGHT_PI = {img:IMAGE_WRITER,color1:PINK}
-var DEF_WRITERRIGHT_BL = {img:IMAGE_WRITER,color1:BLACK}
-var DEF_WRITERRIGHT_GR = {img:IMAGE_WRITER,color1:GRAY}
-var DEF_CONVEYOR = {img:IMAGE_CONVEYOR}
+var DEF_BRANCHUP_RB = {img:IMAGE_BRANCH,color1:RED,color2:BLUE,type:"BRANCH"}
+var DEF_BRANCHUP_BR = {img:IMAGE_BRANCH,color1:BLUE,color2:RED,type:"BRANCH"}
+var DEF_BRANCHUP_GY = {img:IMAGE_BRANCH,color1:GREEN,color2:YELLOW,type:"BRANCH"}
+var DEF_BRANCHUP_YG = {img:IMAGE_BRANCH,color1:YELLOW,color2:GREEN,type:"BRANCH"}
+var DEF_BRANCHUP_PPI = {img:IMAGE_BRANCH,color1:PURPLE,color2:PINK,type:"BRANCH"}
+var DEF_BRANCHUP_PIP = {img:IMAGE_BRANCH,color1:PINK,color2:PURPLE,type:"BRANCH"}
+var DEF_BRANCHUP_BLGR = {img:IMAGE_BRANCH,color1:BLACK,color2:GRAY,type:"BRANCH"}
+var DEF_BRANCHUP_GRBL = {img:IMAGE_BRANCH,color1:GRAY,color2:BLACK,type:"BRANCH"}
+var DEF_WRITERRIGHT_R = {img:IMAGE_WRITER,color1:RED,type:"WRITER"}
+var DEF_WRITERRIGHT_B = {img:IMAGE_WRITER,color1:BLUE,type:"WRITER"}
+var DEF_WRITERRIGHT_G = {img:IMAGE_WRITER,color1:GREEN,type:"WRITER"}
+var DEF_WRITERRIGHT_Y = {img:IMAGE_WRITER,color1:YELLOW,type:"WRITER"}
+var DEF_WRITERRIGHT_P = {img:IMAGE_WRITER,color1:PURPLE,type:"WRITER"}
+var DEF_WRITERRIGHT_PI = {img:IMAGE_WRITER,color1:PINK,type:"WRITER"}
+var DEF_WRITERRIGHT_BL = {img:IMAGE_WRITER,color1:BLACK,type:"WRITER"}
+var DEF_WRITERRIGHT_GR = {img:IMAGE_WRITER,color1:GRAY,type:"WRITER"}
+var DEF_CONVEYOR = {img:IMAGE_CONVEYOR,type:"BELT"}
 
 
 var GRID_W = 32
@@ -69,6 +69,8 @@ var GRID_Y = 20
 
 var LAST_MOUSE_X=0;
 var LAST_MOUSE_Y=0;
+
+var ITEM_DIRECTION=RIGHT;
 
 var SUBMENU = {
 	visible:false,
@@ -332,10 +334,10 @@ function setupGame() {
 }
 
 function mouseOverButton(canvas,e,button) {
-	return (getMousePos(canvas,e).x>=button.x &&
-			getMousePos(canvas,e).x<=button.x+button.w &&
-			getMousePos(canvas,e).y>=button.y &&
-			getMousePos(canvas,e).y<=button.y+button.h)
+	return (getMousePos(e).x>=button.x &&
+			getMousePos(e).x<=button.x+button.w &&
+			getMousePos(e).y>=button.y &&
+			getMousePos(e).y<=button.y+button.h)
 }
 
 function clickEvent(e) {
@@ -356,10 +358,31 @@ function clickEvent(e) {
 					}
 				}
 				ITEM_SELECTED=button.lastselected
-				console.log(button)
+				//console.log(button)
+				return
 			}
 		}
 	}
+	
+	//console.log(getGridCoords(getMousePos(e)))
+	if (ITEM_SELECTED!==undefined) {
+		var clickCoords = getGridCoords(getMousePos(e))
+		if (clickCoords.x>=0&&clickCoords.y>=0&&clickCoords.y<gameGrid.length&&clickCoords.x<gameGrid[clickCoords.y].length) {
+			placeObject(clickCoords,ITEM_SELECTED)
+			//console.log(gameGrid)
+		}
+	}
+}
+
+function placeObject(coords,def) {
+	var newObj={...def,direction:ITEM_DIRECTION}
+	gameGrid[coords.y][coords.x]=newObj
+}
+
+function getGridCoords(pos) {
+	var x = Math.round((pos.x-GRID_X)/GRID_W-1)
+	var y = Math.round((pos.y-GRID_Y)/GRID_H-1)
+	return {x:x,y:y}
 }
 
 function releaseEvent(e) {
@@ -368,9 +391,10 @@ function releaseEvent(e) {
 			if (mouseOverButton(canvas,e,button)) {
 				ITEM_SELECTED=button.def
 				BUTTON_SELECTED.lastselected=button.def
+				SUBMENU.visible=false
+				return
 			}
 		}
-		SUBMENU.visible=false
 	}
 }
 
@@ -403,33 +427,50 @@ function step() {
 }
 
 function updateMouse(e) {
-	//console.log(getMousePos(canvas,e))
+	//console.log(getMousePos(e))
 	e.preventDefault()
-	var mousepos = getMousePos(canvas,e)
+	var mousepos = getMousePos(e)
 	LAST_MOUSE_X=mousepos.x
 	LAST_MOUSE_Y=mousepos.y
 }
 
-function getMousePos(canvas, evt) {
+function getMousePos(e) {
 	var rect = canvas.getBoundingClientRect();
-	if (evt.changedTouches) {
+	if (e.changedTouches) {
 		return {
-		  x: evt.changedTouches[0].clientX - rect.left,
-		  y: evt.changedTouches[0].clientY - rect.top
+		  x: e.changedTouches[0].clientX - rect.left,
+		  y: e.changedTouches[0].clientY - rect.top
 		};
 	} else {
 		return {
-		  x: evt.clientX - rect.left,
-		  y: evt.clientY - rect.top
+		  x: e.clientX - rect.left,
+		  y: e.clientY - rect.top
 		};
 	}
 }
 
-function renderGame() {
+function renderGame(ctx) {
 	var displayGrid = []
 	displayGrid = deepCopy(gameGrid)
 	if (BOT_X!==-1&&BOT_Y!==-1) {
 		displayGrid[BOT_Y][BOT_X]["BOT"]=true
+	}
+	for (var y=0;y<=gameGrid.length;y++) {
+		ctx.moveTo(GRID_X, GRID_Y+GRID_H*y);
+		ctx.lineTo(GRID_X+GRID_W*gameGrid.length, GRID_Y+GRID_H*y);
+	}
+	for (var x=0;x<=gameGrid.length;x++) {
+		ctx.moveTo(GRID_X+GRID_W*x, GRID_Y);
+		ctx.lineTo(GRID_X+GRID_W*x, GRID_Y+GRID_H*gameGrid.length);
+	}
+	ctx.fillStyle="#000000"
+	ctx.stroke();
+	for (var y=0;y<gameGrid.length;y++) {
+		for (var x=0;x<gameGrid[y].length;x++) {
+			if (gameGrid[y][x].img!==undefined) {
+				RenderIcon(GRID_X+GRID_W*x+16,GRID_Y+GRID_H*y+16,ctx,gameGrid[y][x],gameGrid[y][x].direction)
+			}
+		}
 	}
 	/*console.log("Tape: "+BOT_TAPE)
 	console.log(displayGrid)*/
@@ -481,31 +522,24 @@ function drawImage(x,y,img,ctx,degrees){
 function draw() {
 	var ctx = canvas.getContext("2d")
 	if (Math.random()<0.01) {
-		ctx.fillStyle="#a3adab"
+		ctx.fillStyle="rgba(63, 73, 71, 0.5)"
+		ctx.globalAlpha=0.5
+		ctx.fillRect(0,0,canvas.width,canvas.height)
 	} else {
 		ctx.fillStyle="#b5c4c1"
+		ctx.globalAlpha=1.0
+		ctx.fillRect(0,0,canvas.width,canvas.height)
+		renderGame(ctx)
+		
+		if (ITEM_SELECTED) {
+			RenderIcon(LAST_MOUSE_X-16,LAST_MOUSE_Y-16,ctx,ITEM_SELECTED,0)
+		}
+		//drawImage(0,0,IMAGE_CONVEYOR,ctx,0)
+		//drawImage(LAST_MOUSE_X,LAST_MOUSE_Y,IMAGE_ARROW,ctx,0)
+		RenderSubmenu(ctx)
+		RenderMenu(ctx)
+		RenderIcon(32,32,ctx,DEF_BRANCHUP_GY,270)
 	}
-	ctx.fillRect(0,0,canvas.width,canvas.height)
-	renderGame()
-	for (var y=0;y<=gameGrid.length;y++) {
-		ctx.moveTo(GRID_X, GRID_Y+GRID_H*y);
-		ctx.lineTo(GRID_X+GRID_W*gameGrid.length, GRID_Y+GRID_H*y);
-	}
-	for (var x=0;x<=gameGrid.length;x++) {
-		ctx.moveTo(GRID_X+GRID_W*x, GRID_Y);
-		ctx.lineTo(GRID_X+GRID_W*x, GRID_Y+GRID_H*gameGrid.length);
-	}
-	ctx.fillStyle="#000000"
-	ctx.stroke();
-	
-	if (ITEM_SELECTED) {
-		RenderIcon(LAST_MOUSE_X-16,LAST_MOUSE_Y-16,ctx,ITEM_SELECTED,0)
-	}
-	//drawImage(0,0,IMAGE_CONVEYOR,ctx,0)
-	//drawImage(LAST_MOUSE_X,LAST_MOUSE_Y,IMAGE_ARROW,ctx,0)
-	RenderSubmenu(ctx)
-	RenderMenu(ctx)
-	RenderIcon(32,32,ctx,DEF_BRANCHUP_GY,270)
 }
 
 function RenderIcon(x,y,ctx,icon_definition,rot=0,background=undefined) {
@@ -513,20 +547,27 @@ function RenderIcon(x,y,ctx,icon_definition,rot=0,background=undefined) {
 		ctx.fillStyle=background
 		ctx.fillRect(x,y,32,32)
 	}
-	drawImage(
-		x+16,
-		y+16,
-		icon_definition.img,ctx,rot)
+	if (icon_definition.img===IMAGE_BRANCH) {
+		drawImage(
+			x+16,
+			y+16,
+			icon_definition.img,ctx,rot+90)
+	} else {
+		drawImage(
+			x+16,
+			y+16,
+			icon_definition.img,ctx,rot)
+	}
 	switch (icon_definition.img) {
 		case IMAGE_BRANCH:{
 			drawImage(
 				x+16,
 				y+16,
-				GetArrowImage(icon_definition.color1),ctx,rot+180)
+				GetArrowImage(icon_definition.color1),ctx,rot+270)
 			drawImage(
 				x+16,
 				y+16,
-				GetArrowImage(icon_definition.color2),ctx,rot)
+				GetArrowImage(icon_definition.color2),ctx,rot+90)
 		}break;
 		case IMAGE_WRITER:{
 			drawImage(
