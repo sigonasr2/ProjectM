@@ -451,10 +451,6 @@ function getMousePos(e) {
 
 function renderGame(ctx) {
 	var displayGrid = []
-	displayGrid = deepCopy(gameGrid)
-	if (BOT_X!==-1&&BOT_Y!==-1) {
-		displayGrid[BOT_Y][BOT_X]["BOT"]=true
-	}
 	for (var y=0;y<=gameGrid.length;y++) {
 		ctx.moveTo(GRID_X, GRID_Y+GRID_H*y);
 		ctx.lineTo(GRID_X+GRID_W*gameGrid.length, GRID_Y+GRID_H*y);
@@ -538,7 +534,6 @@ function draw() {
 		//drawImage(LAST_MOUSE_X,LAST_MOUSE_Y,IMAGE_ARROW,ctx,0)
 		RenderSubmenu(ctx)
 		RenderMenu(ctx)
-		RenderIcon(32,32,ctx,DEF_BRANCHUP_GY,270)
 	}
 }
 
