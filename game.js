@@ -43,14 +43,23 @@ var WRITERLEFT = {type:"WRITER",direction:LEFT,color:RED}
 var WRITERRIGHT = {type:"WRITER",direction:RIGHT,color:RED}
 var WRITERUP = {type:"WRITER",direction:UP,color:RED}
 
-var DEF_BRANCHDOWN_RB = {img:IMAGE_BRANCH,color1:RED,color2:BLUE}
-var DEF_BRANCHDOWN_BR = {img:IMAGE_BRANCH,color1:BLUE,color2:RED}
-var DEF_BRANCHDOWN_GY = {img:IMAGE_BRANCH,color1:GREEN,color2:YELLOW}
-var DEF_BRANCHDOWN_YG = {img:IMAGE_BRANCH,color1:YELLOW,color2:GREEN}
-var DEF_BRANCHDOWN_PPI = {img:IMAGE_BRANCH,color1:PURPLE,color2:PINK}
-var DEF_BRANCHDOWN_PIP = {img:IMAGE_BRANCH,color1:PINK,color2:PURPLE}
-var DEF_BRANCHDOWN_BLGR = {img:IMAGE_BRANCH,color1:BLACK,color2:GRAY}
-var DEF_BRANCHDOWN_GRBL = {img:IMAGE_BRANCH,color1:GRAY,color2:BLACK}
+var DEF_BRANCHUP_RB = {img:IMAGE_BRANCH,color1:RED,color2:BLUE}
+var DEF_BRANCHUP_BR = {img:IMAGE_BRANCH,color1:BLUE,color2:RED}
+var DEF_BRANCHUP_GY = {img:IMAGE_BRANCH,color1:GREEN,color2:YELLOW}
+var DEF_BRANCHUP_YG = {img:IMAGE_BRANCH,color1:YELLOW,color2:GREEN}
+var DEF_BRANCHUP_PPI = {img:IMAGE_BRANCH,color1:PURPLE,color2:PINK}
+var DEF_BRANCHUP_PIP = {img:IMAGE_BRANCH,color1:PINK,color2:PURPLE}
+var DEF_BRANCHUP_BLGR = {img:IMAGE_BRANCH,color1:BLACK,color2:GRAY}
+var DEF_BRANCHUP_GRBL = {img:IMAGE_BRANCH,color1:GRAY,color2:BLACK}
+var DEF_WRITERRIGHT_R = {img:IMAGE_WRITER,color1:RED}
+var DEF_WRITERRIGHT_B = {img:IMAGE_WRITER,color1:BLUE}
+var DEF_WRITERRIGHT_G = {img:IMAGE_WRITER,color1:GREEN}
+var DEF_WRITERRIGHT_Y = {img:IMAGE_WRITER,color1:YELLOW}
+var DEF_WRITERRIGHT_P = {img:IMAGE_WRITER,color1:PURPLE}
+var DEF_WRITERRIGHT_PI = {img:IMAGE_WRITER,color1:PINK}
+var DEF_WRITERRIGHT_BL = {img:IMAGE_WRITER,color1:BLACK}
+var DEF_WRITERRIGHT_GR = {img:IMAGE_WRITER,color1:GRAY}
+var DEF_CONVEYOR = {img:IMAGE_CONVEYOR}
 
 
 var GRID_W = 32
@@ -62,17 +71,18 @@ var LAST_MOUSE_X=0;
 var LAST_MOUSE_Y=0;
 
 var SUBMENU = {
-	visible:true,
+	visible:false,
 	width:0,
 	height:0,
 	buttons:[]
 }
 
 var BUTTON_SELECTED = undefined
+var ITEM_SELECTED = undefined
 
-var CONVEYOR_BUILD_BUTTON = {img:IMAGE_CONVEYOR,x:-1,y:-1,w:-1,h:-1}
-var BRANCH_BUILD_BUTTON = {img:IMAGE_BRANCH,x:-1,y:-1,w:-1,h:-1}
-var WRITER_BUILD_BUTTON = {img:IMAGE_WRITER,x:-1,y:-1,w:-1,h:-1}
+var CONVEYOR_BUILD_BUTTON = {img:IMAGE_CONVEYOR,x:-1,y:-1,w:-1,h:-1,lastselected:DEF_CONVEYOR}
+var BRANCH_BUILD_BUTTON = {img:IMAGE_BRANCH,x:-1,y:-1,w:-1,h:-1,submenu_buttons:[DEF_BRANCHUP_RB,DEF_BRANCHUP_BR,DEF_BRANCHUP_GY,DEF_BRANCHUP_YG,DEF_BRANCHUP_PPI,DEF_BRANCHUP_PIP,DEF_BRANCHUP_BLGR,DEF_BRANCHUP_GRBL],lastselected:undefined}
+var WRITER_BUILD_BUTTON = {img:IMAGE_WRITER,x:-1,y:-1,w:-1,h:-1,submenu_buttons:[DEF_WRITERRIGHT_R,DEF_WRITERRIGHT_B,DEF_WRITERRIGHT_G,DEF_WRITERRIGHT_Y,DEF_WRITERRIGHT_P,DEF_WRITERRIGHT_PI,DEF_WRITERRIGHT_BL,DEF_WRITERRIGHT_GR],lastselected:undefined}
 
 var MENU = {
 	visible:true,
@@ -313,16 +323,55 @@ function setupGame() {
 	canvas.height=320
 	document.getElementById("game").appendChild(canvas)
 	canvas.addEventListener("mousemove",updateMouse)
+	canvas.addEventListener("mousedown",clickEvent)
+	canvas.addEventListener("mouseup",releaseEvent)
 	canvas.addEventListener("touchmove",updateMouse)
 	canvas.addEventListener("touchstart",clickEvent)
 	canvas.addEventListener("touchend",releaseEvent)
 	//gameGrid = [...createGrid(5,5)]
 }
 
+function mouseOverButton(canvas,e,button) {
+	return (getMousePos(canvas,e).x>=button.x &&
+			getMousePos(canvas,e).x<=button.x+button.w &&
+			getMousePos(canvas,e).y>=button.y &&
+			getMousePos(canvas,e).y<=button.y+button.h)
+}
+
 function clickEvent(e) {
+	//console.log(MENU.buttons)
+	if (MENU.visible) {
+		for (var button of MENU.buttons) {
+			if (mouseOverButton(canvas,e,button)) {
+				if (button.submenu_buttons&&button.submenu_buttons.length>0) {
+					BUTTON_SELECTED=button;
+					SUBMENU.visible=true;
+					SUBMENU.buttons=[]
+					var index = 0;
+					for (var button2 of BUTTON_SELECTED.submenu_buttons) {
+						var buttonX = ((index%3)*48)+16
+						var buttonY = canvas.height*0.8-(Math.floor(index/3)*48)-40
+						SUBMENU.buttons.push({def:button2,img:button2.img,x:buttonX,y:buttonY,w:32,h:32})
+						index++;
+					}
+				}
+				ITEM_SELECTED=button.lastselected
+				console.log(button)
+			}
+		}
+	}
 }
 
 function releaseEvent(e) {
+	if (SUBMENU.visible) {
+		for (var button of SUBMENU.buttons) {
+			if (mouseOverButton(canvas,e,button)) {
+				ITEM_SELECTED=button.def
+				BUTTON_SELECTED.lastselected=button.def
+			}
+		}
+		SUBMENU.visible=false
+	}
 }
 
 function loadLevel(level,botx,boty) {
@@ -448,27 +497,100 @@ function draw() {
 	}
 	ctx.fillStyle="#000000"
 	ctx.stroke();
+	
+	if (ITEM_SELECTED) {
+		RenderIcon(LAST_MOUSE_X-16,LAST_MOUSE_Y-16,ctx,ITEM_SELECTED,0)
+	}
 	//drawImage(0,0,IMAGE_CONVEYOR,ctx,0)
 	//drawImage(LAST_MOUSE_X,LAST_MOUSE_Y,IMAGE_ARROW,ctx,0)
 	RenderSubmenu(ctx)
 	RenderMenu(ctx)
+	RenderIcon(32,32,ctx,DEF_BRANCHUP_GY,270)
 }
 
-function RenderIcon(x,y,ctx,icon_definition,rot=0) {
+function RenderIcon(x,y,ctx,icon_definition,rot=0,background=undefined) {
+	if (background!==undefined) {
+		ctx.fillStyle=background
+		ctx.fillRect(x,y,32,32)
+	}
 	drawImage(
-		x+icon_definition.img.width/2,
-		y+icon_definition.img.height/2,
+		x+16,
+		y+16,
 		icon_definition.img,ctx,rot)
 	switch (icon_definition.img) {
 		case IMAGE_BRANCH:{
-		drawImage(
-			x+icon_definition.img.width/2,
-			y+icon_definition.img.height/2,
-			IMAGE_ARROW,ctx,rot)
-		drawImage(
-			x+icon_definition.img.width/2,
-			y+icon_definition.img.height/2,
-			IMAGE_ARROW,ctx,rot+180)
+			drawImage(
+				x+16,
+				y+16,
+				GetArrowImage(icon_definition.color1),ctx,rot+180)
+			drawImage(
+				x+16,
+				y+16,
+				GetArrowImage(icon_definition.color2),ctx,rot)
+		}break;
+		case IMAGE_WRITER:{
+			drawImage(
+				x+16,
+				y+16,
+				GetDotImage(icon_definition.color1),ctx,rot)
+		}break;
+	}
+}
+
+function GetArrowImage(col) {
+	switch (col) {
+		case RED:{
+			return IMAGE_ARROW_R
+		}break;
+		case BLUE:{
+			return IMAGE_ARROW_B
+		}break;
+		case GREEN:{
+			return IMAGE_ARROW_G
+		}break;
+		case YELLOW:{
+			return IMAGE_ARROW_Y
+		}break;
+		case PURPLE:{
+			return IMAGE_ARROW_P
+		}break;
+		case PINK:{
+			return IMAGE_ARROW_PI
+		}break;
+		case BLACK:{
+			return IMAGE_ARROW_BL
+		}break;
+		case GRAY:{
+			return IMAGE_ARROW_GR
+		}break;
+	}
+}
+
+function GetDotImage(col) {
+	switch (col) {
+		case RED:{
+			return IMAGE_DOT_R
+		}break;
+		case BLUE:{
+			return IMAGE_DOT_B
+		}break;
+		case GREEN:{
+			return IMAGE_DOT_G
+		}break;
+		case YELLOW:{
+			return IMAGE_DOT_Y
+		}break;
+		case PURPLE:{
+			return IMAGE_DOT_P
+		}break;
+		case PINK:{
+			return IMAGE_DOT_PI
+		}break;
+		case BLACK:{
+			return IMAGE_DOT_BL
+		}break;
+		case GRAY:{
+			return IMAGE_DOT_GR
 		}break;
 	}
 }
@@ -476,9 +598,16 @@ function RenderIcon(x,y,ctx,icon_definition,rot=0) {
 function RenderSubmenu(ctx) {
 	if (SUBMENU.visible) {
 		ctx.fillStyle="#76abab"
-		var submenuRows = SUBMENU.buttons.length/3
+		var submenuRows = BUTTON_SELECTED.submenu_buttons.length/3
 		var submenuCols = 3
 		ctx.fillRect(0,canvas.height*0.8-submenuRows*48-16,submenuCols*48+16,submenuRows*48+16)
+		var index = 0;
+		for (var button of BUTTON_SELECTED.submenu_buttons) {
+			var buttonX = ((index%3)*48)+16
+			var buttonY = canvas.height*0.8-(Math.floor(index/3)*48)-40
+			RenderIcon(buttonX,buttonY,ctx,button,0,(LAST_MOUSE_X>=buttonX&&LAST_MOUSE_X<=buttonX+32&&LAST_MOUSE_Y>=buttonY&&LAST_MOUSE_Y<=buttonY+32)?"#555555":"#b5b5b5")
+			index++;
+		}
 	}
 }
 
@@ -487,8 +616,17 @@ function RenderMenu(ctx) {
 		ctx.fillStyle="#20424a"
 		ctx.fillRect(0,canvas.height*0.8,canvas.width,canvas.height*0.2)
 		var buttonX = 16
+		var buttonY = canvas.height*0.8+16
 		for (var button of MENU.buttons) {
-			AddButton(button.img,buttonX,canvas.height*0.8+16,ctx,button,0)
+			if (button.lastselected) {
+				RenderIcon(buttonX,buttonY,ctx,button.lastselected,0,"#b5b5b5")
+			} else {
+				AddButton(button.img,buttonX,buttonY,ctx,button,0)
+			}
+			button.x=buttonX
+			button.y=buttonY
+			button.w=32
+			button.h=32
 			buttonX+=48
 		}
 	}
@@ -497,11 +635,7 @@ function RenderMenu(ctx) {
 function AddButton(img,x,y,ctx,button,rot=0) {
 	ctx.fillStyle="#b5b5b5"
 	ctx.fillRect(x,y,32,32)
-	button.x=x
-	button.y=y
-	button.w=32
-	button.h=32
-	drawImage(x+button.img.width/2,y+button.img.height/2,img,ctx,rot)
+	drawImage(x+16,y+16,img,ctx,rot)
 }
 
 function ConsumeTape() {
