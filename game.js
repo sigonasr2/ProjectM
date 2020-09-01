@@ -438,8 +438,8 @@ function setupGame() {
 	canvas.addEventListener("mousedown",clickEvent)
 	canvas.addEventListener("mouseup",releaseEvent)
 	canvas.addEventListener("touchmove",updateMouse)
-	canvas.addEventListener("touchstart",clickEvent)
-	canvas.addEventListener("touchend",releaseEvent)
+	//canvas.addEventListener("touchstart",clickEvent)
+	//canvas.addEventListener("touchend",releaseEvent)
 	document.addEventListener("keydown",keydownEvent)
 	loadStage(STAGE2)
 }
