@@ -438,8 +438,8 @@ function setupGame() {
 	canvas.addEventListener("mousedown",clickEvent)
 	canvas.addEventListener("mouseup",releaseEvent)
 	canvas.addEventListener("touchmove",updateMouse)
-	//canvas.addEventListener("touchstart",clickEvent)
-	//canvas.addEventListener("touchend",releaseEvent)
+	canvas.addEventListener("touchstart",clickEvent)
+	canvas.addEventListener("touchend",releaseEvent)
 	document.addEventListener("keydown",keydownEvent)
 	loadStage(STAGE2)
 }
@@ -477,6 +477,9 @@ function mouseOverButton(canvas,e,button) {
 
 function clickEvent(e) {
 	//console.log(MENU.buttons)
+	if (e instanceof TouchEvent) {
+		e.preventDefault()
+	}
 	if (MENU.visible) {
 		for (var button of MENU.buttons) {
 			if (mouseOverButton(canvas,e,button)) {
@@ -535,6 +538,9 @@ function getGridCoords(pos) {
 }
 
 function releaseEvent(e) {
+	if (e instanceof TouchEvent) {
+		e.preventDefault()
+	}
 	if (SUBMENU.visible) {
 		for (var button of SUBMENU.buttons) {
 			if (mouseOverButton(canvas,e,button)) {
