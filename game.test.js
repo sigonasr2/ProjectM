@@ -442,9 +442,9 @@ function runTests() {
 	.it("Run a TESTING state to see if an acceptable player-built level has no bots in queue.",()=>{
 		loadStage(STAGE2)
 		gameGrid=[
-			[{},{},{},{},{},],
-			[{},{...BELTDOWN},{},{},{},],
-			[{},{...BRANCHRIGHT},{...BELTRIGHT},{...BELTRIGHT},{type:"EXIT"},],
+			[{},{...BELTRIGHT},{...BELTRIGHT},{...BELTDOWN},{},],
+			[{...BELTRIGHT},{...BRANCHUP},{},{...BELTDOWN},{},],
+			[{},{...BRANCHRIGHT},{},{...BELTRIGHT},{type:"EXIT"},],
 			[{},{},{},{},{},],
 			[{},{},{},{},{},],
 		]
@@ -469,13 +469,15 @@ function runTests() {
 	console.log("ALL TESTS: "+totalTestsPassed+" passed, "+(totalTests-totalTestsPassed)+" failed, "+totalTests+" total")
 	if (testsPass===undefined) {
 		testsPass=true
-	}
+	}	
+	resetGame();
 }
 
 
 function runGame() {	
+	resetGame();
 	setupGame();
-	loadLevel(LEVEL2,0,2)
+	//loadLevel(LEVEL2,0,2)
 	setInterval(()=>{
 		step()
 		draw()

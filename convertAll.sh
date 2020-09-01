@@ -1,0 +1,1 @@
+find *.png -type f -exec ./convertto64.sh {} +
