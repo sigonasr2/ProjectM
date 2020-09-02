@@ -31,6 +31,14 @@ var BOT_STATE = ALIVE
 var BOT_TAPE = "RB"
 var BOT_QUEUE = []
 var DELETEMODE = false
+var DRAGGING = false
+var DRAG_X = -1
+var DRAG_Y = -1
+
+var BOT_PREVX = BOT_X
+var BOT_PREVY = BOT_Y
+
+var MOBILE = false
 
 var BELTDOWN = {type:"BELT",direction:DOWN/*,direction2 - defines a secondary direction. For two belts at once.*/}
 var BELTRIGHT = {type:"BELT",direction:RIGHT}
@@ -128,6 +136,8 @@ function runGameSimulation(){
 	gameState=WAITING
 	BOT_X=gameStage.start.x
 	BOT_Y=gameStage.start.y
+	BOT_PREVX=BOT_X
+	BOT_PREVY=BOT_Y
 	BOT_DIR=RIGHT
 	gameState=RUNNING
 	for (var i=0;i<MENU.buttons.length;i++) {
@@ -478,7 +488,10 @@ function mouseOverButton(canvas,e,button) {
 function clickEvent(e) {
 	//console.log(MENU.buttons)
 	if (e instanceof TouchEvent) {
+		MOBILE=true
 		e.preventDefault()
+	} else {
+		MOBILE=false
 	}
 	if (MENU.visible) {
 		for (var button of MENU.buttons) {
@@ -512,23 +525,46 @@ function clickEvent(e) {
 	//console.log(getGridCoords(getMousePos(e)))
 	if (ITEM_SELECTED!==undefined||DELETEMODE) {
 		var clickCoords = getGridCoords(getMousePos(e))
-		if (clickCoords.x>=0&&clickCoords.y>=0&&clickCoords.y<gameGrid.length&&clickCoords.x<gameGrid[clickCoords.y].length) {
-			if (DELETEMODE) {
-				deleteObject(clickCoords)
-			} else {
-				placeObject(clickCoords,ITEM_SELECTED)
-			}
+		if (coordsInBounds(clickCoords)) {
+			modifyBoard(clickCoords,ITEM_SELECTED)
+			DRAGGING = true
+			DRAG_X = clickCoords.x
+			DRAG_Y = clickCoords.y
 			//console.log(gameGrid)
 		}
 	}
 }
 
+function coordsInBounds(coords) {
+	return coords.x>=0&&coords.y>=0&&coords.y<gameGrid.length&&coords.x<gameGrid[coords.y].length
+}
+
+function modifyBoard(clickCoords,item) {
+	if (DELETEMODE) {
+		deleteObject(clickCoords)
+	} else {
+		placeObject(clickCoords,item)
+	}
+}
+
+function notAForbiddenObject(coords) {
+	return (gameStage.start.x!==coords.x||gameStage.start.y!==coords.y)&&(gameGrid[coords.y][coords.x].type===undefined||(gameGrid[coords.y][coords.x].type&&gameGrid[coords.y][coords.x].type!=="EXIT"))
+}
+
 function deleteObject(coords,def) {
-	gameGrid[coords.y][coords.x]={}
+	if (notAForbiddenObject(coords)) {
+		gameGrid[coords.y][coords.x]={}
+		gameState=WAITING
+		endARound()
+	}
 }
 function placeObject(coords,def) {
-	var newObj={...def,direction:ITEM_DIRECTION}
-	gameGrid[coords.y][coords.x]=newObj
+	if (notAForbiddenObject(coords)) {
+		var newObj={...def,direction:ITEM_DIRECTION}
+		gameGrid[coords.y][coords.x]=newObj
+		gameState=WAITING
+		endARound()
+	}
 }
 
 function getGridCoords(pos) {
@@ -552,6 +588,7 @@ function releaseEvent(e) {
 		}
 		SUBMENU.visible=false
 	}
+	DRAGGING = false
 }
 
 function loadLevel(level,botx,boty) {
@@ -589,6 +626,17 @@ function updateMouse(e) {
 	var mousepos = getMousePos(e)
 	LAST_MOUSE_X=mousepos.x
 	LAST_MOUSE_Y=mousepos.y
+	
+	if (DRAGGING) {
+		var clickCoords = getGridCoords(getMousePos(e))
+		if (coordsInBounds(clickCoords)) {
+			if (DRAG_X!==clickCoords.x||DRAG_Y!==clickCoords.y) {
+				modifyBoard(clickCoords,ITEM_SELECTED)
+				DRAG_X=clickCoords.x
+				DRAG_Y=clickCoords.y
+			}
+		}
+	}
 }
 
 function getMousePos(e) {
@@ -624,13 +672,19 @@ function renderGame(ctx) {
 			if (gameGrid[y][x].img!==undefined) {
 				RenderIcon(GRID_X+GRID_W*x+16,GRID_Y+GRID_H*y+16,ctx,gameGrid[y][x],gameGrid[y][x].direction,undefined,{x:x,y:y})
 			}
-			if (BOT_X!==undefined) {
-				drawImage(
-				GRID_X+GRID_W*BOT_X+16+GRID_W/2,
-				GRID_Y+GRID_H*BOT_Y+16+GRID_H/2,
-				IMAGE_BOT,ctx,0*90)
+			if (gameGrid[y][x].type==="EXIT") {
+				drawImage(GRID_X+GRID_W*x+32,GRID_Y+GRID_H*y+32,IMAGE_EXIT,ctx,0,1)
 			}
 		}
+	}
+	drawImage(GRID_X+GRID_W*gameStage.start.x+16+GRID_W/2,
+		GRID_Y+GRID_H*gameStage.start.y+16+GRID_H/2,
+		IMAGE_ENTRANCE,ctx,0)
+	if (BOT_X!==undefined&&(gameState===RUNNING||gameState==REVIEWING)) {
+		drawImage(
+		GRID_X+GRID_W*BOT_X+16+GRID_W/2,
+		GRID_Y+GRID_H*BOT_Y+16+GRID_H/2,
+		IMAGE_BOT,ctx,0*90)
 	}
 }
 
@@ -668,11 +722,12 @@ function colorToHex(r,g,b) {
 	return "#"+hex(r)+hex(g)+hex(b);
 }
 
-function drawImage(x,y,img,ctx,degrees){
+function drawImage(x,y,img,ctx,degrees,scale=1){
     //context.clearRect(0,0,canvas.width,canvas.height);
     ctx.save();
     ctx.translate(x,y);
     ctx.rotate(degrees*Math.PI/180);
+	ctx.scale(scale,scale)
     ctx.drawImage(img,-img.width/2,-img.height/2);
     ctx.restore();
 }
@@ -689,7 +744,7 @@ function draw() {
 		ctx.fillRect(0,0,canvas.width,canvas.height)
 		renderGame(ctx)
 		
-		if (ITEM_SELECTED) {
+		if (ITEM_SELECTED&&!MOBILE) {
 			RenderIcon(LAST_MOUSE_X-16,LAST_MOUSE_Y-16,ctx,ITEM_SELECTED,ITEM_DIRECTION)
 		}
 		//drawImage(0,0,IMAGE_CONVEYOR,ctx,0)
@@ -705,6 +760,24 @@ function RenderGameInfo(ctx) {
 		ctx.fillStyle="#20424a"
 		ctx.fillRect(canvas.width*0.75,0,canvas.width,canvas.height*0.8)
 		RenderTape(canvas.width*0.75+8,8,canvas.width*0.25-16,ctx)
+	
+		if (MOBILE) {
+			drawImage(canvas.width-96+24,canvas.height-96+32,
+			IMAGE_OUTLINE,ctx,0)
+			if (ITEM_SELECTED) {
+				if (ITEM_SELECTED.img===IMAGE_CONVEYOR) {
+					RenderIcon(canvas.width-48-38-16,canvas.height-48-32-16,ctx,ITEM_SELECTED,ITEM_DIRECTION,undefined,undefined,2)
+				} else {
+					RenderIcon(canvas.width-48-38,canvas.height-48-32,ctx,ITEM_SELECTED,ITEM_DIRECTION,undefined,undefined,2)
+				}
+			} else {
+				if (DELETEMODE) {
+					drawImage(canvas.width-48-24,canvas.height-48-16,IMAGE_DELETE_CURSOR,ctx,0,2)
+				} else {
+					drawImage(canvas.width-48-24,canvas.height-48-16,IMAGE_CURSOR,ctx,0,2)
+				}
+			}
+		}
 	}
 }
 
@@ -748,8 +821,8 @@ function RenderTape(x,y,width,ctx) {
 	}
 }
 
-function createVerticalGradient(x,y,up,ctx) {
-	var gradient = ctx.createLinearGradient(x, y+32*((up)?1:0), x, y+32*((up)?0:1));
+function createVerticalGradient(x,y,up,ctx,scale) {
+	var gradient = ctx.createLinearGradient(x, y+32*scale*((up)?1:0), x, y+32*scale*((up)?0:1));
 		gradient.addColorStop(0,"rgb(124,162,157)")
 		gradient.addColorStop(0.31,"black")
 		gradient.addColorStop(0.6,"rgb(124,162,157)")
@@ -760,8 +833,8 @@ function createVerticalGradient(x,y,up,ctx) {
 	return gradient
 }
 
-function createHorizontalGradient(x,y,right,ctx) {
-	var gradient = ctx.createLinearGradient(x+32*((right)?0:1), y, x+32*((right)?1:0), y);
+function createHorizontalGradient(x,y,right,ctx,scale) {
+	var gradient = ctx.createLinearGradient(x+32*scale*((right)?0:1), y, x+32*scale*((right)?1:0), y);
 		gradient.addColorStop(0,"rgb(124,162,157)")
 		gradient.addColorStop(0.31,"black")
 		gradient.addColorStop(0.6,"rgb(124,162,157)")
@@ -772,37 +845,37 @@ function createHorizontalGradient(x,y,right,ctx) {
 	return gradient
 }
 
-function DrawSingleConveyor(x,y,dir,ctx) {
-	ctx.lineWidth = 16;
+function DrawSingleConveyor(x,y,dir,ctx,scale) {
+	ctx.lineWidth = 16*scale;
 	ctx.lineCap = "square"
 	ctx.strokeStyle="rgb(124,162,157)"
 	ctx.setLineDash([])
 	if (dir===LEFT||dir===RIGHT) {
 		ctx.beginPath()
-		ctx.moveTo(x+8,y+16)
-		ctx.lineTo(x+24,y+16)
+		ctx.moveTo(x+8*scale,y+16*scale)
+		ctx.lineTo(x+24*scale,y+16*scale)
 		ctx.stroke()
-		ctx.setLineDash([5,5])
-		ctx.lineDashOffset = -dashOffset*((dir===LEFT)?-1:1);
-		ctx.strokeStyle=createHorizontalGradient(x,y,dir===RIGHT,ctx)
-		ctx.lineWidth = 3.5;
+		ctx.setLineDash([5*scale,5*scale])
+		ctx.lineDashOffset = -dashOffset*((dir===LEFT)?-1*scale:1*scale);
+		ctx.strokeStyle=createHorizontalGradient(x,y,dir===RIGHT,ctx,scale)
+		ctx.lineWidth = 3.5*scale;
 		ctx.beginPath()
-		ctx.moveTo(x+2,y+16)
-		ctx.lineTo(x+30,y+16)
+		ctx.moveTo(x+2*scale,y+16*scale)
+		ctx.lineTo(x+30*scale,y+16*scale)
 		ctx.stroke()
 	} else {
 		ctx.beginPath()
-		ctx.moveTo(x+16,y+8)
-		ctx.lineTo(x+16,y+24)
+		ctx.moveTo(x+16*scale,y+8*scale)
+		ctx.lineTo(x+16*scale,y+24*scale)
 		ctx.stroke()
 		ctx.strokeStyle="rgb(34,62,57)"
-		ctx.setLineDash([5,5])
+		ctx.setLineDash([5*scale,5*scale])
 		ctx.lineDashOffset = -dashOffset*((dir===DOWN)?1:-1);
-		ctx.strokeStyle=createVerticalGradient(x,y,dir===UP,ctx)
-		ctx.lineWidth = 3.5;
+		ctx.strokeStyle=createVerticalGradient(x,y,dir===UP,ctx,scale)
+		ctx.lineWidth = 3.5*scale;
 		ctx.beginPath()
-		ctx.moveTo(x+16,y+2)
-		ctx.lineTo(x+16,y+30)
+		ctx.moveTo(x+16*scale,y+2*scale)
+		ctx.lineTo(x+16*scale,y+30*scale)
 		ctx.stroke()
 	}
 }
@@ -816,92 +889,92 @@ function GetOppositeDirection(dir) {
 	}
 }
 
-function DrawConnectedConveyor(x,y,ctx,connections,dir,pass=0) {
-	ctx.lineWidth = 15;
+function DrawConnectedConveyor(x,y,ctx,connections,dir,scale,pass=0) {
+	ctx.lineWidth = 15*scale;
 	ctx.lineCap = "round"
 	ctx.strokeStyle="rgb(124,162,157)"
 	switch (Object.keys(connections).length) {
 		case 0:{
-			DrawSingleConveyor(x,y,dir,ctx)
+			DrawSingleConveyor(x*scale,y*scale,dir,ctx,scale)
 		}break;
 		default:{
-			ctx.lineWidth = 15;
+			ctx.lineWidth = 15*scale;
 			ctx.lineCap = "square"
 			ctx.strokeStyle="rgb(124,162,157)"
 			ctx.setLineDash([])
 			ctx.beginPath()
-			ctx.moveTo(x+16,y+16)
+			ctx.moveTo(x+16*scale,y+16*scale)
 			var endingPoint={x:0,y:0}
 			switch (dir) {
-				case UP:{startingPoint={x:0,y:-12};endingPoint={x:0,y:-14}}break;
-				case DOWN:{startingPoint={x:0,y:12};endingPoint={x:0,y:14}}break;
-				case RIGHT:{startingPoint={x:12,y:0};endingPoint={x:14,y:0}}break;
-				case LEFT:{startingPoint={x:-12,y:0};endingPoint={x:-14,y:0}}break;
+				case UP:{startingPoint={x:0,y:-12*scale};endingPoint={x:0,y:-14*scale}}break;
+				case DOWN:{startingPoint={x:0,y:12*scale};endingPoint={x:0,y:14*scale}}break;
+				case RIGHT:{startingPoint={x:12*scale,y:0};endingPoint={x:14*scale,y:0}}break;
+				case LEFT:{startingPoint={x:-12*scale,y:0};endingPoint={x:-14*scale,y:0}}break;
 			}
-			ctx.moveTo(x+16+startingPoint.x,y+16+startingPoint.y)
-			ctx.lineTo(x+16+endingPoint.x,y+16+endingPoint.y)
+			ctx.moveTo(x+16*scale+startingPoint.x,y+16*scale+startingPoint.y)
+			ctx.lineTo(x+16*scale+endingPoint.x,y+16*scale+endingPoint.y)
 			if (pass===0) {ctx.stroke();}
 			for (var connection of Object.keys(connections)) {
 				var startingPoint={x:x,y:y}
 				switch (Number(connection)) {
-					case UP:{startingPoint={x:x+16,y:y+8}}break;
-					case DOWN:{startingPoint={x:x+16,y:y+24}}break;
-					case RIGHT:{startingPoint={x:x+24,y:y+16}}break;
-					case LEFT:{startingPoint={x:x+8,y:y+16}}break;
+					case UP:{startingPoint={x:x+16*scale,y:y+8*scale}}break;
+					case DOWN:{startingPoint={x:x+16*scale,y:y+24*scale}}break;
+					case RIGHT:{startingPoint={x:x+24*scale,y:y+16*scale}}break;
+					case LEFT:{startingPoint={x:x+8*scale,y:y+16*scale}}break;
 				}
-				ctx.lineWidth = 16;
+				ctx.lineWidth = 16*scale;
 				ctx.lineCap = "square"
 				ctx.strokeStyle="rgb(124,162,157)"
 				ctx.setLineDash([])
 				ctx.beginPath()
 				ctx.moveTo(startingPoint.x,startingPoint.y)
-				ctx.lineTo(x+16,y+16)
+				ctx.lineTo(x+16*scale,y+16*scale)
 				if (pass===0) {ctx.stroke()}
-				ctx.setLineDash([5,5])
+				ctx.setLineDash([5*scale,5*scale])
 				ctx.lineDashOffset = -dashOffset*1;
 				if (Number(connection)===RIGHT||Number(connection)===LEFT) {
-					ctx.strokeStyle=createHorizontalGradient(x,y,Number(connection)===LEFT,ctx)
+					ctx.strokeStyle=createHorizontalGradient(x,y,Number(connection)===LEFT,ctx,scale)
 				} else {
-					ctx.strokeStyle=createVerticalGradient(x,y,Number(connection)===UP,ctx)
+					ctx.strokeStyle=createVerticalGradient(x,y,Number(connection)===UP,ctx,scale)
 				}
-				ctx.lineWidth = 3.5;
+				ctx.lineWidth = 3.5*scale;
 				ctx.beginPath()
 				startingPoint={x:x,y:y}
 				switch (Number(connection)) {
-					case UP:{startingPoint={x:x+16,y:y+2}}break;
-					case DOWN:{startingPoint={x:x+16,y:y+30}}break;
-					case RIGHT:{startingPoint={x:x+30,y:y+16}}break;
-					case LEFT:{startingPoint={x:x+2,y:y+16}}break;
+					case UP:{startingPoint={x:x+16*scale,y:y+2*scale}}break;
+					case DOWN:{startingPoint={x:x+16*scale,y:y+30*scale}}break;
+					case RIGHT:{startingPoint={x:x+30*scale,y:y+16*scale}}break;
+					case LEFT:{startingPoint={x:x+2*scale,y:y+16*scale}}break;
 				}
 				ctx.moveTo(startingPoint.x,startingPoint.y)
-				ctx.lineTo(x+16,y+16)
+				ctx.lineTo(x+16*scale,y+16*scale)
 				if (pass===1) {ctx.stroke()}
 			}
 			
 			if (dir===RIGHT||dir===LEFT) {
-				ctx.strokeStyle=createHorizontalGradient(x,y,dir===LEFT,ctx)
+				ctx.strokeStyle=createHorizontalGradient(x,y,dir===LEFT,ctx,scale)
 			} else {
-				ctx.strokeStyle=createVerticalGradient(x,y,dir===UP,ctx)
+				ctx.strokeStyle=createVerticalGradient(x,y,dir===UP,ctx,scale)
 			}
-			ctx.setLineDash([5,5])
-			ctx.lineWidth = 3.5;
+			ctx.setLineDash([5*scale,5*scale])
+			ctx.lineWidth = 3.5*scale;
 			ctx.beginPath()
 			switch (dir) {
-				case UP:{startingPoint={x:0,y:-14}}break;
-				case DOWN:{startingPoint={x:0,y:14}}break;
-				case RIGHT:{startingPoint={x:14,y:0}}break;
-				case LEFT:{startingPoint={x:-14,y:0}}break;
+				case UP:{startingPoint={x:0,y:-14*scale}}break;
+				case DOWN:{startingPoint={x:0,y:14*scale}}break;
+				case RIGHT:{startingPoint={x:14*scale,y:0}}break;
+				case LEFT:{startingPoint={x:-14*scale,y:0}}break;
 			}
-			ctx.moveTo(x+16,y+16)
-			ctx.lineTo(x+16+startingPoint.x,y+16+startingPoint.y)
+			ctx.moveTo(x+16*scale,y+16*scale)
+			ctx.lineTo(x+16*scale+startingPoint.x,y+16*scale+startingPoint.y)
 			if (pass===1) {ctx.stroke();}
 		}break;
 	}
 }
 
-function RenderConveyor(x,y,ctx,icon_definition,dir=0,background=undefined,grid=undefined) {
+function RenderConveyor(x,y,ctx,icon_definition,dir=0,background=undefined,grid=undefined,scale) {
 	if (grid===undefined) {
-		DrawSingleConveyor(x,y,dir,ctx)
+		DrawSingleConveyor(x,y,dir,ctx,scale)
 	} else {
 		var connections = {}
 		if (grid.x>0) {if (gameGrid[grid.y][grid.x-1].direction===RIGHT){connections[LEFT]=true}}
@@ -909,46 +982,46 @@ function RenderConveyor(x,y,ctx,icon_definition,dir=0,background=undefined,grid=
 		if (grid.y>0) {if (gameGrid[grid.y-1][grid.x].direction===DOWN){connections[UP]=true}}
 		if (grid.y<gameGrid.length-1) {if (gameGrid[grid.y+1][grid.x].direction===UP){connections[DOWN]=true}}
 		//console.log("Connections: "+JSON.stringify(connections))
-		DrawConnectedConveyor(x,y,ctx,connections,dir)
-		DrawConnectedConveyor(x,y,ctx,connections,dir,1)
+		DrawConnectedConveyor(x,y,ctx,connections,dir,scale)
+		DrawConnectedConveyor(x,y,ctx,connections,dir,scale,1)
 	}
 }
 
-function RenderIcon(x,y,ctx,icon_definition,dir=0,background=undefined,renderToGrid=undefined) {
+function RenderIcon(x,y,ctx,icon_definition,dir=0,background=undefined,renderToGrid=undefined,scale=1) {
 	if (background!==undefined) {
 		ctx.fillStyle=background
 		ctx.fillRect(x,y,32,32)
 	}
 	if (icon_definition.img===IMAGE_CONVEYOR) {
-		RenderConveyor(x,y,ctx,icon_definition,dir,background,renderToGrid)
+		RenderConveyor(x,y,ctx,icon_definition,dir,background,renderToGrid,scale)
 	} else {
 		if (icon_definition.img===IMAGE_BRANCH) {
 			drawImage(
 				x+16,
 				y+16,
-				icon_definition.img,ctx,dir*90)
+				icon_definition.img,ctx,dir*90,scale)
 		} else {
 			drawImage(
 				x+16,
 				y+16,
-				icon_definition.img,ctx,dir*90-90)
+				icon_definition.img,ctx,dir*90-90,scale)
 		}
 		switch (icon_definition.img) {
 			case IMAGE_BRANCH:{
 				drawImage(
 					x+16,
 					y+16,
-					GetArrowImage(icon_definition.color1),ctx,dir*90+0)
+					GetArrowImage(icon_definition.color1),ctx,dir*90+0,scale)
 				drawImage(
 					x+16,
 					y+16,
-					GetArrowImage(icon_definition.color2),ctx,dir*90+180)
+					GetArrowImage(icon_definition.color2),ctx,dir*90+180,scale)
 			}break;
 			case IMAGE_WRITER:{
 				drawImage(
 					x+16,
 					y+16,
-					GetDotImage(icon_definition.color1),ctx,dir*90-90)
+					GetDotImage(icon_definition.color1),ctx,dir*90-90,scale)
 			}break;
 		}
 	}
