@@ -126,21 +126,27 @@ var MENU = {
 }
 
 function runGameSimulation(){
-	gameState=TESTING
-	generateBotQueue()
-	//console.log(BOT_QUEUE)
-	if (BOT_QUEUE.length>0) {
-		BOT_TAPE=BOT_QUEUE[0]
-	} else {
-		BOT_TAPE="BR"
+	if (gameState!==PAUSED) {
+		gameState=TESTING
+		generateBotQueue()
+		//console.log(BOT_QUEUE)
+		if (BOT_QUEUE.length>0) {
+			BOT_TAPE=BOT_QUEUE[0]
+		} else {
+			BOT_TAPE="BR"
+		}
+		BOT_STATE=ALIVE
+		gameState=WAITING
+		BOT_X=gameStage.start.x
+		BOT_Y=gameStage.start.y
+		BOT_PREVX=BOT_X
+		BOT_PREVY=BOT_Y
+		BOT_DIR=RIGHT
+		gameState=RUNNING
+		if (gameSpeed===-1) {
+			gameSpeed=1000/1
+		}
 	}
-	BOT_STATE=ALIVE
-	gameState=WAITING
-	BOT_X=gameStage.start.x
-	BOT_Y=gameStage.start.y
-	BOT_PREVX=BOT_X
-	BOT_PREVY=BOT_Y
-	BOT_DIR=RIGHT
 	gameState=RUNNING
 	for (var i=0;i<MENU.buttons.length;i++) {
 		if (MENU.buttons[i].img===IMAGE_PLAY) {
@@ -690,7 +696,7 @@ function renderGame(ctx) {
 	drawImage(GRID_X+GRID_W*gameStage.start.x+16+GRID_W/2,
 		GRID_Y+GRID_H*gameStage.start.y+16+GRID_H/2,
 		IMAGE_ENTRANCE,ctx,0)
-	if (BOT_X!==undefined&&(gameState===RUNNING||gameState==REVIEWING||gameState==FINISH)) {
+	if (BOT_X!==undefined&&(gameState===RUNNING||gameState===PAUSED||gameState==REVIEWING||gameState==FINISH)) {
 		var movedDiff = {x:BOT_X-BOT_PREVX,y:BOT_Y-BOT_PREVY}
 		movedDiff.x*=Math.min((new Date().getTime()-LASTPOSITIONUPDATE),gameSpeed)/gameSpeed
 		movedDiff.y*=Math.min((new Date().getTime()-LASTPOSITIONUPDATE),gameSpeed)/gameSpeed
