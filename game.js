@@ -32,6 +32,7 @@ var BOT_TAPE = "RB"
 var BOT_QUEUE = []
 var DELETEMODE = false
 var DRAGGING = false
+var MOUSEDOWN = false
 var DRAG_X = -1
 var DRAG_Y = -1
 
@@ -359,7 +360,7 @@ function setNextSquare(offsetX,offsetY) {
 
 function runBot(testing) {
 	//console.log(new Date().getTime())
-	if (lastGameUpdate<new Date().getTime()||testing) {
+	if ((lastGameUpdate<new Date().getTime()||testing)&&gameSpeed!==-1) {
 		lastGameUpdate=new Date().getTime()+gameSpeed
 		//console.log("Update")
 		var nextSquare = {}
@@ -539,6 +540,8 @@ function clickEvent(e) {
 			//console.log(gameGrid)
 		}
 	}
+	
+	MOUSEDOWN=true
 }
 
 function coordsInBounds(coords) {
@@ -595,6 +598,7 @@ function releaseEvent(e) {
 		SUBMENU.visible=false
 	}
 	DRAGGING = false
+	MOUSEDOWN=false
 }
 
 function loadLevel(level,botx,boty) {
@@ -688,8 +692,8 @@ function renderGame(ctx) {
 		IMAGE_ENTRANCE,ctx,0)
 	if (BOT_X!==undefined&&(gameState===RUNNING||gameState==REVIEWING||gameState==FINISH)) {
 		var movedDiff = {x:BOT_X-BOT_PREVX,y:BOT_Y-BOT_PREVY}
-		movedDiff.x*=Math.min((new Date().getTime()-LASTPOSITIONUPDATE),1000)/1000
-		movedDiff.y*=Math.min((new Date().getTime()-LASTPOSITIONUPDATE),1000)/1000
+		movedDiff.x*=Math.min((new Date().getTime()-LASTPOSITIONUPDATE),gameSpeed)/gameSpeed
+		movedDiff.y*=Math.min((new Date().getTime()-LASTPOSITIONUPDATE),gameSpeed)/gameSpeed
 		drawImage(
 		GRID_X+GRID_W*(BOT_PREVX+movedDiff.x)+16+GRID_W/2,
 		GRID_Y+GRID_H*(BOT_PREVY+movedDiff.y)+16+GRID_H/2,
@@ -764,11 +768,103 @@ function draw() {
 	}
 }
 
+function RenderSpeedbar(x,y,w,ctx) {
+	var gradient = ctx.createLinearGradient(x, 32, x+w, 32);
+		gradient.addColorStop(0,"rgb(105, 55, 51)")
+		gradient.addColorStop(1,"rgb(54, 77, 255)")
+	ctx.lineWidth = 6;
+	ctx.lineCap = "round"
+	ctx.strokeStyle="white"
+	ctx.setLineDash([])
+	ctx.beginPath()
+	ctx.moveTo(x,y)
+	ctx.lineTo(x+w,y)
+	ctx.stroke();
+	ctx.lineWidth = 4;
+	ctx.lineCap = "round"
+	ctx.strokeStyle=gradient
+	ctx.setLineDash([])
+	ctx.beginPath()
+	ctx.moveTo(x,y)
+	ctx.lineTo(x+w,y)
+	ctx.stroke();
+	ctx.lineWidth = 2;
+	ctx.lineCap = "round"
+	ctx.strokeStyle="yellow"
+	ctx.setLineDash([])
+	var cursorX = 0
+	switch (gameSpeed) {
+		case 1000/1:{
+			cursorX=8;
+		}break;
+		case 1000/2:{
+			cursorX=16;
+		}break;
+		case 1000/3:{
+			cursorX=24;
+		}break;
+		case 1000/4:{
+			cursorX=32;
+		}break;
+		case 1000/6:{
+			cursorX=40;
+		}break;
+		case 1000/8:{
+			cursorX=48;
+		}break;
+		case 1000/16:{
+			cursorX=56;
+		}break;
+		case 1000/32:{
+			cursorX=64;
+		}break;
+	}
+	if (MOUSEDOWN && LAST_MOUSE_X>=x&&LAST_MOUSE_X<=x+w && LAST_MOUSE_Y>=y-6&&LAST_MOUSE_Y<=y+6) {
+		var mouseCursorPos = Math.round((LAST_MOUSE_X-x)/8)*8
+		switch (mouseCursorPos) {
+			case 0:{
+				gameSpeed=-1;
+			}break;
+			case 8:{
+				gameSpeed=1000/1;
+			}break;
+			case 16:{
+				gameSpeed=1000/2;
+			}break;
+			case 24:{
+				gameSpeed=1000/3;
+			}break;
+			case 32:{
+				gameSpeed=1000/4;
+			}break;
+			case 40:{
+				gameSpeed=1000/6;
+			}break;
+			case 48:{
+				gameSpeed=1000/8;
+			}break;
+			case 56:{
+				gameSpeed=1000/16;
+			}break;
+			case 64:{
+				gameSpeed=1000/32;
+			}break;
+		}
+	}
+	ctx.beginPath()
+	ctx.moveTo(x+cursorX,y-4)
+	ctx.lineTo(x+cursorX,y+4)
+	ctx.stroke();
+}
+
 function RenderGameInfo(ctx) {
 	if (MENU.visible) {
 		ctx.fillStyle="#20424a"
 		ctx.fillRect(canvas.width*0.75,0,canvas.width,canvas.height*0.8)
-		RenderTape(canvas.width*0.75+8,8,canvas.width*0.25-16,ctx)
+		
+		RenderSpeedbar(canvas.width*0.75+(canvas.width*0.25)/2-32,8,64,ctx)
+		
+		RenderTape(canvas.width*0.75+8,16,canvas.width*0.25-16,ctx)
 	
 		if (MOBILE) {
 			drawImage(canvas.width-96+24,canvas.height-96+32,
