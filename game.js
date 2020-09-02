@@ -1,10 +1,26 @@
 var canvas;
+
+const GOODQUOTES=[
+"Let the conversion begin...",
+"All the bots, come to ME",
+"Let's convert them ALL",
+"What a fantastic machine you have built",
+"I like it!",]
+const BADQUOTES=[
+"I smell a funny one here...",
+"I have found a flaw!",
+"How could you build me so disfunctionally?",
+"???",
+"You seemed to miss a step...",]
+
 const WAITING = 0;
 const RUNNING = 1;
 const REVIEWING = 2;
 const TESTING = 3;
 const FINISH = 4;
 const PAUSED = 5;
+
+var ISTESTING = false;
 
 const UP = 0;
 const RIGHT = 1;
@@ -128,24 +144,31 @@ var MENU = {
 function runGameSimulation(){
 	if (gameState!==PAUSED) {
 		gameState=TESTING
+		ISTESTING=true
+		BOT_PREVX=-100
+		BOT_PREVY=-100
 		generateBotQueue()
 		//console.log(BOT_QUEUE)
-		if (BOT_QUEUE.length>0) {
-			BOT_TAPE=BOT_QUEUE[0]
-		} else {
-			BOT_TAPE="BR"
-		}
-		BOT_STATE=ALIVE
-		gameState=WAITING
-		BOT_X=gameStage.start.x
-		BOT_Y=gameStage.start.y
-		BOT_PREVX=BOT_X
-		BOT_PREVY=BOT_Y
-		BOT_DIR=RIGHT
-		gameState=RUNNING
-		if (gameSpeed===-1) {
-			gameSpeed=1000/1
-		}
+		setTimeout(()=>{
+			ISTESTING=false
+			if (BOT_QUEUE.length>0) {
+				BOT_TAPE=BOT_QUEUE[0]
+			} else {
+				BOT_TAPE="BR"
+			}
+			BOT_X=gameStage.start.x
+			BOT_Y=gameStage.start.y
+			BOT_PREVX=BOT_X
+			BOT_PREVY=BOT_Y
+			BOT_STATE=ALIVE
+			gameState=WAITING
+			BOT_DIR=RIGHT
+			gameState=RUNNING
+			if (gameSpeed===-1) {
+				gameSpeed=1000/1
+			}
+			gameState=RUNNING
+		},300)
 	}
 	gameState=RUNNING
 	for (var i=0;i<MENU.buttons.length;i++) {
@@ -166,16 +189,18 @@ function endARound() {
 }
 
 function pauseGameSimulation(){
-	gameState=PAUSED
-	endARound()
+	if (!ISTESTING) {
+		gameState=PAUSED
+		endARound()
+	}
 }
 function resetSimulation(){
 	BOT_STATE=ALIVE
 	gameState=WAITING
 	BOT_X=gameStage.start.x
 	BOT_Y=gameStage.start.y
-	BOT_PREVX=BOT_X
-	BOT_PREVY=BOT_Y
+	BOT_PREVX=-100
+	BOT_PREVY=-100
 	BOT_DIR=RIGHT
 	endARound()
 }
@@ -351,8 +376,10 @@ function ConvertNumberToTape(val) {
 function setNextSquare(offsetX,offsetY) {
 	if (gameGrid[BOT_Y+offsetY]!==undefined) {
 		var nextSquare = gameGrid[BOT_Y+offsetY][BOT_X+offsetX];
-		BOT_PREVX=BOT_X
-		BOT_PREVY=BOT_Y
+		if (!ISTESTING) {
+			BOT_PREVX=BOT_X
+			BOT_PREVY=BOT_Y
+		}
 		LASTPOSITIONUPDATE=new Date().getTime()
 		BOT_X+=offsetX
 		BOT_Y+=offsetY
@@ -360,6 +387,7 @@ function setNextSquare(offsetX,offsetY) {
 	} else {
 		gameState = REVIEWING
 		BOT_STATE = DEAD
+		endARound()
 		return undefined
 	}
 }
@@ -630,7 +658,7 @@ function deepCopy(arr) {
 }
 
 function step() {
-	dashOffset+=0.3
+	dashOffset+=0.1*Math.max((1000/gameSpeed),1)
 	if (gameState===RUNNING) {
 		runBot()
 	}
@@ -871,6 +899,16 @@ function RenderGameInfo(ctx) {
 		RenderSpeedbar(canvas.width*0.75+(canvas.width*0.25)/2-32,8,64,ctx)
 		
 		RenderTape(canvas.width*0.75+8,16,canvas.width*0.25-16,ctx)
+		
+		if (ISTESTING) {
+			ctx.font="32px 'Zilla Slab', serif"
+			ctx.fillStyle="white"
+			ctx.textAlign = "center"
+			ctx.fillText("Testing...",(canvas.width*0.75)/2,canvas.height*0.75)
+			ctx.lineWidth=2
+			ctx.strokeStyle="Black"
+			ctx.strokeText("Testing...",(canvas.width*0.75)/2,canvas.height*0.75)
+		}
 	
 		if (MOBILE) {
 			drawImage(canvas.width-96+24,canvas.height-96+32,
