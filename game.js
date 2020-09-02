@@ -37,6 +37,7 @@ var DRAG_Y = -1
 
 var BOT_PREVX = BOT_X
 var BOT_PREVY = BOT_Y
+var LASTPOSITIONUPDATE = 0
 
 var MOBILE = false
 
@@ -166,6 +167,8 @@ function resetSimulation(){
 	gameState=WAITING
 	BOT_X=gameStage.start.x
 	BOT_Y=gameStage.start.y
+	BOT_PREVX=BOT_X
+	BOT_PREVY=BOT_Y
 	BOT_DIR=RIGHT
 	endARound()
 }
@@ -341,6 +344,9 @@ function ConvertNumberToTape(val) {
 function setNextSquare(offsetX,offsetY) {
 	if (gameGrid[BOT_Y+offsetY]!==undefined) {
 		var nextSquare = gameGrid[BOT_Y+offsetY][BOT_X+offsetX];
+		BOT_PREVX=BOT_X
+		BOT_PREVY=BOT_Y
+		LASTPOSITIONUPDATE=new Date().getTime()
 		BOT_X+=offsetX
 		BOT_Y+=offsetY
 		return nextSquare
@@ -680,10 +686,13 @@ function renderGame(ctx) {
 	drawImage(GRID_X+GRID_W*gameStage.start.x+16+GRID_W/2,
 		GRID_Y+GRID_H*gameStage.start.y+16+GRID_H/2,
 		IMAGE_ENTRANCE,ctx,0)
-	if (BOT_X!==undefined&&(gameState===RUNNING||gameState==REVIEWING)) {
+	if (BOT_X!==undefined&&(gameState===RUNNING||gameState==REVIEWING||gameState==FINISH)) {
+		var movedDiff = {x:BOT_X-BOT_PREVX,y:BOT_Y-BOT_PREVY}
+		movedDiff.x*=Math.min((new Date().getTime()-LASTPOSITIONUPDATE),1000)/1000
+		movedDiff.y*=Math.min((new Date().getTime()-LASTPOSITIONUPDATE),1000)/1000
 		drawImage(
-		GRID_X+GRID_W*BOT_X+16+GRID_W/2,
-		GRID_Y+GRID_H*BOT_Y+16+GRID_H/2,
+		GRID_X+GRID_W*(BOT_PREVX+movedDiff.x)+16+GRID_W/2,
+		GRID_Y+GRID_H*(BOT_PREVY+movedDiff.y)+16+GRID_H/2,
 		IMAGE_BOT,ctx,0*90)
 	}
 }
