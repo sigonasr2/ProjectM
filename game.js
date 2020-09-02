@@ -52,6 +52,10 @@ var MOUSEDOWN = false
 var DRAG_X = -1
 var DRAG_Y = -1
 
+var MESSAGETIMER = -1
+var EXPECTED = true //True means the bot was supposed to accepted, false means the bot was supposed to be rejected.
+var RESULT = true //True means you won. False means you lost.
+
 var BOT_PREVX = BOT_X
 var BOT_PREVY = BOT_Y
 var LASTPOSITIONUPDATE = 0
@@ -168,6 +172,7 @@ function runGameSimulation(){
 				gameSpeed=1000/1
 			}
 			gameState=RUNNING
+			MESSAGETIMER=new Date().getTime()+3000
 		},300)
 	}
 	gameState=RUNNING
@@ -312,6 +317,7 @@ function resetGame() {
 
 function generateBotQueue() {
 	BOT_QUEUE=[]
+	RESULT=true
 	if (gameState===TESTING) {
 		//Iterate up to...15 RED/BLUE combinations.
 		var MAX_VALUE=1000
@@ -327,8 +333,11 @@ function generateBotQueue() {
 			} else {
 				wrongBot=true;
 			}
-			
 			if (wrongBot) {
+				if (BOT_QUEUE.length===0) {
+					EXPECTED = isSupposedToBeAccepted;
+				}
+				RESULT=false
 				BOT_QUEUE.push(tape)
 			}
 			if (BOT_QUEUE.length===3) {
@@ -900,6 +909,21 @@ function RenderGameInfo(ctx) {
 		
 		RenderTape(canvas.width*0.75+8,16,canvas.width*0.25-16,ctx)
 		
+		if (gameState===RUNNING||gameState===REVIEWING||gameState===FINISH||gameState===PAUSED) {
+			ctx.font="16px 'Zilla Slab', serif"
+			ctx.fillStyle="white"
+			ctx.textAlign = "center"
+			ctx.fillText("Expected Result: ",canvas.width-canvas.width*0.25/2,canvas.height-120)
+			
+			if (EXPECTED) {
+				ctx.fillStyle="rgb(52, 235, 140)"
+				ctx.fillText(" ACCEPT",canvas.width-canvas.width*0.25/2,canvas.height-100)
+			} else {
+				ctx.fillStyle="rgb(235, 98, 52)"
+				ctx.fillText(" REJECT",canvas.width-canvas.width*0.25/2,canvas.height-100)
+			}
+		}
+		
 		if (ISTESTING) {
 			ctx.font="32px 'Zilla Slab', serif"
 			ctx.fillStyle="white"
@@ -908,6 +932,31 @@ function RenderGameInfo(ctx) {
 			ctx.lineWidth=2
 			ctx.strokeStyle="Black"
 			ctx.strokeText("Testing...",(canvas.width*0.75)/2,canvas.height*0.75)
+		}
+		
+		var currentTime = new Date().getTime();
+		if (currentTime<MESSAGETIMER) {
+			ctx.font="24px 'Zilla Slab', serif"
+			ctx.fillStyle=(RESULT)?"green":"rgb(144, 12, 63)"
+			ctx.textAlign = "center"
+			var screenText = []
+			var quotearr = (RESULT)?GOODQUOTES[MESSAGETIMER%GOODQUOTES.length].split(" "):BADQUOTES[MESSAGETIMER%BADQUOTES.length].split(" ")
+			for (var i=0;i<quotearr.length;i++) {
+				var tempText = screenText+" "+quotearr[i]
+				var newWidth = ctx.measureText(tempText).width
+				if (newWidth>(canvas.width*0.75)-48) {
+					screenText.push(quotearr[i])
+				} else {
+					if (screenText.length===0) {
+						screenText.push(quotearr[i])
+					} else {
+						screenText[screenText.length-1]+=" "+quotearr[i]
+					}
+				}
+			}
+			for (var i=0;i<screenText.length;i++) {
+				ctx.fillText(screenText[screenText.length-1-i],(canvas.width*0.75)/2,canvas.height*0.75-i*28)
+			}
 		}
 	
 		if (MOBILE) {
@@ -933,7 +982,7 @@ function RenderGameInfo(ctx) {
 function RenderTape(x,y,width,ctx) {
 	var xOffset=0
 	var yOffset=0
-	for (var i=0;i<BOT_TAPE.length;i++) {
+	for (var i=0;i<Math.min(BOT_TAPE.length,64);i++) {
 		switch (BOT_TAPE[i]) {
 			case RED:{
 				drawImage(x+xOffset+16,y+yOffset+16,IMAGE_DOT_R,ctx,0)
