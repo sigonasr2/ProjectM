@@ -77,23 +77,23 @@ var WRITERLEFT = {type:"WRITER",direction:LEFT,color1:RED}
 var WRITERRIGHT = {type:"WRITER",direction:RIGHT,color1:RED}
 var WRITERUP = {type:"WRITER",direction:UP,color1:RED}
 
-var DEF_BRANCHUP_RB = {img:IMAGE_BRANCH,color1:RED,color2:BLUE,type:"BRANCH"}
-var DEF_BRANCHUP_BR = {img:IMAGE_BRANCH,color1:BLUE,color2:RED,type:"BRANCH"}
-var DEF_BRANCHUP_GY = {img:IMAGE_BRANCH,color1:GREEN,color2:YELLOW,type:"BRANCH"}
-var DEF_BRANCHUP_YG = {img:IMAGE_BRANCH,color1:YELLOW,color2:GREEN,type:"BRANCH"}
-var DEF_BRANCHUP_PPI = {img:IMAGE_BRANCH,color1:PURPLE,color2:PINK,type:"BRANCH"}
-var DEF_BRANCHUP_PIP = {img:IMAGE_BRANCH,color1:PINK,color2:PURPLE,type:"BRANCH"}
-var DEF_BRANCHUP_BLGR = {img:IMAGE_BRANCH,color1:BLACK,color2:GRAY,type:"BRANCH"}
-var DEF_BRANCHUP_GRBL = {img:IMAGE_BRANCH,color1:GRAY,color2:BLACK,type:"BRANCH"}
-var DEF_WRITERRIGHT_R = {img:IMAGE_WRITER,color1:RED,type:"WRITER"}
-var DEF_WRITERRIGHT_B = {img:IMAGE_WRITER,color1:BLUE,type:"WRITER"}
-var DEF_WRITERRIGHT_G = {img:IMAGE_WRITER,color1:GREEN,type:"WRITER"}
-var DEF_WRITERRIGHT_Y = {img:IMAGE_WRITER,color1:YELLOW,type:"WRITER"}
-var DEF_WRITERRIGHT_P = {img:IMAGE_WRITER,color1:PURPLE,type:"WRITER"}
-var DEF_WRITERRIGHT_PI = {img:IMAGE_WRITER,color1:PINK,type:"WRITER"}
-var DEF_WRITERRIGHT_BL = {img:IMAGE_WRITER,color1:BLACK,type:"WRITER"}
-var DEF_WRITERRIGHT_GR = {img:IMAGE_WRITER,color1:GRAY,type:"WRITER"}
-var DEF_CONVEYOR = {img:IMAGE_CONVEYOR,type:"BELT"}
+var DEF_BRANCHUP_RB = {img:ID_BRANCH,color1:RED,color2:BLUE,type:"BRANCH"}
+var DEF_BRANCHUP_BR = {img:ID_BRANCH,color1:BLUE,color2:RED,type:"BRANCH"}
+var DEF_BRANCHUP_GY = {img:ID_BRANCH,color1:GREEN,color2:YELLOW,type:"BRANCH"}
+var DEF_BRANCHUP_YG = {img:ID_BRANCH,color1:YELLOW,color2:GREEN,type:"BRANCH"}
+var DEF_BRANCHUP_PPI = {img:ID_BRANCH,color1:PURPLE,color2:PINK,type:"BRANCH"}
+var DEF_BRANCHUP_PIP = {img:ID_BRANCH,color1:PINK,color2:PURPLE,type:"BRANCH"}
+var DEF_BRANCHUP_BLGR = {img:ID_BRANCH,color1:BLACK,color2:GRAY,type:"BRANCH"}
+var DEF_BRANCHUP_GRBL = {img:ID_BRANCH,color1:GRAY,color2:BLACK,type:"BRANCH"}
+var DEF_WRITERRIGHT_R = {img:ID_WRITER,color1:RED,type:"WRITER"}
+var DEF_WRITERRIGHT_B = {img:ID_WRITER,color1:BLUE,type:"WRITER"}
+var DEF_WRITERRIGHT_G = {img:ID_WRITER,color1:GREEN,type:"WRITER"}
+var DEF_WRITERRIGHT_Y = {img:ID_WRITER,color1:YELLOW,type:"WRITER"}
+var DEF_WRITERRIGHT_P = {img:ID_WRITER,color1:PURPLE,type:"WRITER"}
+var DEF_WRITERRIGHT_PI = {img:ID_WRITER,color1:PINK,type:"WRITER"}
+var DEF_WRITERRIGHT_BL = {img:ID_WRITER,color1:BLACK,type:"WRITER"}
+var DEF_WRITERRIGHT_GR = {img:ID_WRITER,color1:GRAY,type:"WRITER"}
+var DEF_CONVEYOR = {img:ID_CONVEYOR,type:"BELT"}
 
 
 var GRID_W = 32
@@ -123,25 +123,25 @@ var KEY_ROTATION_LEFT = ["A","G","a","h","4","ArrowLeft"]
 var KEY_ROTATION_UP = ["W","K","w","k","8","ArrowUp"]
 var KEY_ROTATION_DOWN = ["S","J","s","j","2","ArrowDown"]
 
-var CONVEYOR_BUILD_BUTTON = {img:IMAGE_CONVEYOR,x:-1,y:-1,w:-1,h:-1,lastselected:DEF_CONVEYOR}
-var BRANCH_BUILD_BUTTON = {img:IMAGE_BRANCH,x:-1,y:-1,w:-1,h:-1,submenu_buttons:[DEF_BRANCHUP_RB,DEF_BRANCHUP_BR,DEF_BRANCHUP_GY,DEF_BRANCHUP_YG,DEF_BRANCHUP_PPI,DEF_BRANCHUP_PIP,DEF_BRANCHUP_BLGR,DEF_BRANCHUP_GRBL],lastselected:undefined}
-var WRITER_BUILD_BUTTON = {img:IMAGE_WRITER,x:-1,y:-1,w:-1,h:-1,submenu_buttons:[DEF_WRITERRIGHT_R,DEF_WRITERRIGHT_B,DEF_WRITERRIGHT_G,DEF_WRITERRIGHT_Y,DEF_WRITERRIGHT_P,DEF_WRITERRIGHT_PI,DEF_WRITERRIGHT_BL,DEF_WRITERRIGHT_GR],lastselected:undefined}
-var ROTATE_CLOCKWISE_BUTTON = {img:IMAGE_ROTATE_CLOCKWISE,x:-1,y:-1,w:-1,h:-1,cb:rotateClockwise
+var CONVEYOR_BUILD_BUTTON = {img:ID_CONVEYOR,x:-1,y:-1,w:-1,h:-1,lastselected:DEF_CONVEYOR}
+var BRANCH_BUILD_BUTTON = {img:ID_BRANCH,x:-1,y:-1,w:-1,h:-1,submenu_buttons:[DEF_BRANCHUP_RB,DEF_BRANCHUP_BR,DEF_BRANCHUP_GY,DEF_BRANCHUP_YG,DEF_BRANCHUP_PPI,DEF_BRANCHUP_PIP,DEF_BRANCHUP_BLGR,DEF_BRANCHUP_GRBL],lastselected:undefined}
+var WRITER_BUILD_BUTTON = {img:ID_WRITER,x:-1,y:-1,w:-1,h:-1,submenu_buttons:[DEF_WRITERRIGHT_R,DEF_WRITERRIGHT_B,DEF_WRITERRIGHT_G,DEF_WRITERRIGHT_Y,DEF_WRITERRIGHT_P,DEF_WRITERRIGHT_PI,DEF_WRITERRIGHT_BL,DEF_WRITERRIGHT_GR],lastselected:undefined}
+var ROTATE_CLOCKWISE_BUTTON = {img:ID_ROTATE_CLOCKWISE,x:-1,y:-1,w:-1,h:-1,cb:rotateClockwise
 }
-var ROTATE_COUNTERCLOCKWISE_BUTTON = {img:IMAGE_ROTATE_COUNTERCLOCKWISE,x:-1,y:-1,w:-1,h:-1,cb:rotateCounterClockwise
+var ROTATE_COUNTERCLOCKWISE_BUTTON = {img:ID_ROTATE_COUNTERCLOCKWISE,x:-1,y:-1,w:-1,h:-1,cb:rotateCounterClockwise
 }
-var WRITER_BUILD_BUTTON = {img:IMAGE_WRITER,x:-1,y:-1,w:-1,h:-1,submenu_buttons:[DEF_WRITERRIGHT_R,DEF_WRITERRIGHT_B,DEF_WRITERRIGHT_G,DEF_WRITERRIGHT_Y,DEF_WRITERRIGHT_P,DEF_WRITERRIGHT_PI,DEF_WRITERRIGHT_BL,DEF_WRITERRIGHT_GR],lastselected:undefined}
+var WRITER_BUILD_BUTTON = {img:ID_WRITER,x:-1,y:-1,w:-1,h:-1,submenu_buttons:[DEF_WRITERRIGHT_R,DEF_WRITERRIGHT_B,DEF_WRITERRIGHT_G,DEF_WRITERRIGHT_Y,DEF_WRITERRIGHT_P,DEF_WRITERRIGHT_PI,DEF_WRITERRIGHT_BL,DEF_WRITERRIGHT_GR],lastselected:undefined}
 
 
-var PLAY_BUTTON = {img:IMAGE_PLAY,x:-1,y:-1,w:-1,h:-1,cb:runGameSimulation
+var PLAY_BUTTON = {img:ID_PLAY,x:-1,y:-1,w:-1,h:-1,cb:runGameSimulation
 }
-var PAUSE_BUTTON = {img:IMAGE_PAUSE,x:-1,y:-1,w:-1,h:-1,cb:pauseGameSimulation
+var PAUSE_BUTTON = {img:ID_PAUSE,x:-1,y:-1,w:-1,h:-1,cb:pauseGameSimulation
 }
-var RESET_BUTTON = {img:IMAGE_RESET,x:-1,y:-1,w:-1,h:-1,cb:resetSimulation
+var RESET_BUTTON = {img:ID_RESET,x:-1,y:-1,w:-1,h:-1,cb:resetSimulation
 }
-var DELETE_BUTTON = {img:IMAGE_DELETE,x:-1,y:-1,w:-1,h:-1,cb:toggleDeleteMode
+var DELETE_BUTTON = {img:ID_DELETE,x:-1,y:-1,w:-1,h:-1,cb:toggleDeleteMode
 }
-var HOME_BUTTON = {img:IMAGE_HOME,x:-1,y:-1,w:-1,h:-1,cb:goHome
+var HOME_BUTTON = {img:ID_HOME,x:-1,y:-1,w:-1,h:-1,cb:goHome
 }
 
 var MENU = {
@@ -188,7 +188,7 @@ function runGameSimulation(){
 			gameState=RUNNING
 			MESSAGETIMER=new Date().getTime()+3000
 			for (var i=0;i<MENU.buttons.length;i++) {
-				if (MENU.buttons[i].img===IMAGE_PLAY) {
+				if (MENU.buttons[i].img===ID_PLAY) {
 					MENU.buttons[i]=PAUSE_BUTTON
 					break;
 				}
@@ -197,7 +197,7 @@ function runGameSimulation(){
 	}
 	gameState=RUNNING
 	for (var i=0;i<MENU.buttons.length;i++) {
-		if (MENU.buttons[i].img===IMAGE_PLAY) {
+		if (MENU.buttons[i].img===ID_PLAY) {
 			MENU.buttons[i]=PAUSE_BUTTON
 			break;
 		}
@@ -206,7 +206,7 @@ function runGameSimulation(){
 
 function endARound() {
 	for (var i=0;i<MENU.buttons.length;i++) {
-		if (MENU.buttons[i].img===IMAGE_PAUSE) {
+		if (MENU.buttons[i].img===ID_PAUSE) {
 			MENU.buttons[i]=PLAY_BUTTON
 			break;
 		}
@@ -806,13 +806,13 @@ function renderGame(ctx) {
 				RenderIcon(GRID_X+GRID_W*x+16,GRID_Y+GRID_H*y+16,ctx,gameGrid[y][x],gameGrid[y][x].direction,undefined,{x:x,y:y})
 			}
 			if (gameGrid[y][x].type==="EXIT") {
-				drawImage(GRID_X+GRID_W*x+32,GRID_Y+GRID_H*y+32,IMAGE_EXIT,ctx,0,1)
+				drawImage(GRID_X+GRID_W*x+32,GRID_Y+GRID_H*y+32,ID_EXIT,ctx,0,1)
 			}
 		}
 	}
 	drawImage(GRID_X+GRID_W*gameStage.start.x+16+GRID_W/2,
 		GRID_Y+GRID_H*gameStage.start.y+16+GRID_H/2,
-		IMAGE_ENTRANCE,ctx,0)
+		ID_ENTRANCE,ctx,0)
 	if (BOT_X!==undefined&&(gameState===RUNNING||gameState===PAUSED||gameState==REVIEWING||gameState==FINISH)) {
 		var movedDiff = {x:BOT_X-BOT_PREVX,y:BOT_Y-BOT_PREVY}
 		movedDiff.x*=Math.min((new Date().getTime()-LASTPOSITIONUPDATE),gameSpeed)/gameSpeed
@@ -820,7 +820,7 @@ function renderGame(ctx) {
 		drawImage(
 		GRID_X+GRID_W*(BOT_PREVX+movedDiff.x)+16+GRID_W/2,
 		GRID_Y+GRID_H*(BOT_PREVY+movedDiff.y)+16+GRID_H/2,
-		IMAGE_BOT,ctx,0*90)
+		ID_BOT,ctx,0*90)
 	}
 }
 
@@ -864,7 +864,7 @@ function drawImage(x,y,img,ctx,degrees,scale=1){
     ctx.translate(x,y);
     ctx.rotate(degrees*Math.PI/180);
 	ctx.scale(scale,scale)
-    ctx.drawImage(img,-img.width/2,-img.height/2);
+    ctx.drawImage(IMAGE_DATA[img],-IMAGE_DATA[img].width/2,-IMAGE_DATA[img].height/2);
     ctx.restore();
 }
 
@@ -884,8 +884,8 @@ function draw() {
 			if (ITEM_SELECTED&&!MOBILE) {
 				RenderIcon(LAST_MOUSE_X-16,LAST_MOUSE_Y-16,ctx,ITEM_SELECTED,ITEM_DIRECTION)
 			}
-			//drawImage(0,0,IMAGE_CONVEYOR,ctx,0)
-			//drawImage(LAST_MOUSE_X,LAST_MOUSE_Y,IMAGE_ARROW,ctx,0)
+			//drawImage(0,0,ID_CONVEYOR,ctx,0)
+			//drawImage(LAST_MOUSE_X,LAST_MOUSE_Y,ID_ARROW,ctx,0)
 			RenderSubmenu(ctx)
 			RenderMenu(ctx)
 			RenderGameInfo(ctx)
@@ -1013,9 +1013,9 @@ function RenderGameInfo(ctx) {
 		RenderSpeedbar(canvas.width*0.75+(canvas.width*0.25)/2-32,8,64,ctx)
 		
 		if (completedStages[gameStage.name]!==undefined&&completedStages[gameStage.name].complete) {
-			drawImage(canvas.width-18,14,IMAGE_COMPLETE_STAR,ctx,0,0.75)
+			drawImage(canvas.width-18,14,ID_COMPLETE_STAR,ctx,0,0.75)
 		} else {
-			drawImage(canvas.width-18,14,IMAGE_INCOMPLETE_STAR,ctx,0,0.75)
+			drawImage(canvas.width-18,14,ID_INCOMPLETE_STAR,ctx,0,0.75)
 		}
 		
 		RenderTape(canvas.width*0.75+8,16,canvas.width*0.25-16,ctx)
@@ -1071,18 +1071,18 @@ function RenderGameInfo(ctx) {
 	
 		if (MOBILE&&gameState!==RUNNING) {
 			drawImage(canvas.width*0.75-48,canvas.height*0.8-48,
-			IMAGE_OUTLINE,ctx,0)
+			ID_OUTLINE,ctx,0)
 			if (ITEM_SELECTED) {
-				if (ITEM_SELECTED.img===IMAGE_CONVEYOR) {
+				if (ITEM_SELECTED.img===ID_CONVEYOR) {
 					RenderIcon(canvas.width*0.75-48-32,canvas.height*0.8-48-32,ctx,ITEM_SELECTED,ITEM_DIRECTION,undefined,undefined,2)
 				} else {
 					RenderIcon(canvas.width*0.75-48-16,canvas.height*0.8-48-16,ctx,ITEM_SELECTED,ITEM_DIRECTION,undefined,undefined,2)
 				}
 			} else {
 				if (DELETEMODE) {
-					drawImage(canvas.width*0.75-48,canvas.height*0.8-48,IMAGE_DELETE_CURSOR,ctx,0,2)
+					drawImage(canvas.width*0.75-48,canvas.height*0.8-48,ID_DELETE_CURSOR,ctx,0,2)
 				} else {
-					drawImage(canvas.width*0.75-48,canvas.height*0.8-48,IMAGE_CURSOR,ctx,0,2)
+					drawImage(canvas.width*0.75-48,canvas.height*0.8-48,ID_CURSOR,ctx,0,2)
 				}
 			}
 		}
@@ -1099,30 +1099,30 @@ function RenderTape(x,y,width,ctx) {
 	for (var i=0;i<Math.min(BOT_TAPE.length,1024);i++) {
 		switch (BOT_TAPE[i]) {
 			case RED:{
-				drawImage(x+xOffset+16,y+yOffset+16,IMAGE_DOT_R,ctx,0)
+				drawImage(x+xOffset+16,y+yOffset+16,ID_DOT_R,ctx,0)
 			}break;
 			case BLUE:{
-				drawImage(x+xOffset+16,y+yOffset+16,IMAGE_DOT_B,ctx,0)
+				drawImage(x+xOffset+16,y+yOffset+16,ID_DOT_B,ctx,0)
 			}break;
 			case GREEN:{
-				drawImage(x+xOffset+16,y+yOffset+16,IMAGE_DOT_G,ctx,0)
+				drawImage(x+xOffset+16,y+yOffset+16,ID_DOT_G,ctx,0)
 			}break;
 			case YELLOW:{
-				drawImage(x+xOffset+16,y+yOffset+16,IMAGE_DOT_Y,ctx,0)
+				drawImage(x+xOffset+16,y+yOffset+16,ID_DOT_Y,ctx,0)
 			}break;
 			case PURPLE:{
-				drawImage(x+xOffset+16,y+yOffset+16,IMAGE_DOT_P,ctx,0)
+				drawImage(x+xOffset+16,y+yOffset+16,ID_DOT_P,ctx,0)
 			}break;
 			case PINK:{
-				drawImage(x+xOffset+16,y+yOffset+16,IMAGE_DOT_PI,ctx,0)
+				drawImage(x+xOffset+16,y+yOffset+16,ID_DOT_PI,ctx,0)
 			}break;
 			case BLACK:{
 				
-				drawImage(x+xOffset+16,y+yOffset+16,IMAGE_DOT_BL,ctx,0)
+				drawImage(x+xOffset+16,y+yOffset+16,ID_DOT_BL,ctx,0)
 			}break;
 			case GRAY:{
 				
-				drawImage(x+xOffset+16,y+yOffset+16,IMAGE_DOT_GR,ctx,0)
+				drawImage(x+xOffset+16,y+yOffset+16,ID_DOT_GR,ctx,0)
 			}break;
 		}
 		xOffset+=24;
@@ -1316,10 +1316,10 @@ function RenderIcon(x,y,ctx,icon_definition,dir=0,background=undefined,renderToG
 		ctx.fillStyle=background
 		ctx.fillRect(x,y,32,32)
 	}
-	if (icon_definition.img===IMAGE_CONVEYOR) {
+	if (icon_definition.img===ID_CONVEYOR) {
 		RenderConveyor(x,y,ctx,icon_definition,dir,background,renderToGrid,scale)
 	} else {
-		if (icon_definition.img===IMAGE_BRANCH) {
+		if (icon_definition.img===ID_BRANCH) {
 			drawImage(
 				x+16,
 				y+16,
@@ -1331,7 +1331,7 @@ function RenderIcon(x,y,ctx,icon_definition,dir=0,background=undefined,renderToG
 				icon_definition.img,ctx,dir*90-90,scale)
 		}
 		switch (icon_definition.img) {
-			case IMAGE_BRANCH:{
+			case ID_BRANCH:{
 				drawImage(
 					x+16,
 					y+16,
@@ -1341,7 +1341,7 @@ function RenderIcon(x,y,ctx,icon_definition,dir=0,background=undefined,renderToG
 					y+16,
 					GetArrowImage(icon_definition.color2),ctx,dir*90+180,scale)
 			}break;
-			case IMAGE_WRITER:{
+			case ID_WRITER:{
 				drawImage(
 					x+16,
 					y+16,
@@ -1354,28 +1354,28 @@ function RenderIcon(x,y,ctx,icon_definition,dir=0,background=undefined,renderToG
 function GetArrowImage(col) {
 	switch (col) {
 		case RED:{
-			return IMAGE_ARROW_R
+			return ID_ARROW_R
 		}break;
 		case BLUE:{
-			return IMAGE_ARROW_B
+			return ID_ARROW_B
 		}break;
 		case GREEN:{
-			return IMAGE_ARROW_G
+			return ID_ARROW_G
 		}break;
 		case YELLOW:{
-			return IMAGE_ARROW_Y
+			return ID_ARROW_Y
 		}break;
 		case PURPLE:{
-			return IMAGE_ARROW_P
+			return ID_ARROW_P
 		}break;
 		case PINK:{
-			return IMAGE_ARROW_PI
+			return ID_ARROW_PI
 		}break;
 		case BLACK:{
-			return IMAGE_ARROW_BL
+			return ID_ARROW_BL
 		}break;
 		case GRAY:{
-			return IMAGE_ARROW_GR
+			return ID_ARROW_GR
 		}break;
 	}
 }
@@ -1383,28 +1383,28 @@ function GetArrowImage(col) {
 function GetDotImage(col) {
 	switch (col) {
 		case RED:{
-			return IMAGE_DOT_R
+			return ID_DOT_R
 		}break;
 		case BLUE:{
-			return IMAGE_DOT_B
+			return ID_DOT_B
 		}break;
 		case GREEN:{
-			return IMAGE_DOT_G
+			return ID_DOT_G
 		}break;
 		case YELLOW:{
-			return IMAGE_DOT_Y
+			return ID_DOT_Y
 		}break;
 		case PURPLE:{
-			return IMAGE_DOT_P
+			return ID_DOT_P
 		}break;
 		case PINK:{
-			return IMAGE_DOT_PI
+			return ID_DOT_PI
 		}break;
 		case BLACK:{
-			return IMAGE_DOT_BL
+			return ID_DOT_BL
 		}break;
 		case GRAY:{
-			return IMAGE_DOT_GR
+			return ID_DOT_GR
 		}break;
 	}
 }
@@ -1449,7 +1449,7 @@ function RenderMenu(ctx) {
 function AddButton(img,x,y,ctx,button,dir=0) {
 	ctx.fillStyle="#b5b5b5"
 	ctx.fillRect(x,y,32,32)
-	if (img===IMAGE_WRITER) {
+	if (img===ID_WRITER) {
 		drawImage(x+16,y+16,img,ctx,dir*90-90)
 	} else {
 		drawImage(x+16,y+16,img,ctx,dir*90)
