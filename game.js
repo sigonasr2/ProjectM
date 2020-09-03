@@ -19,6 +19,7 @@ const REVIEWING = 2;
 const TESTING = 3;
 const FINISH = 4;
 const PAUSED = 5;
+const MAINMENU = 6;
 
 var ISTESTING = false;
 
@@ -55,6 +56,7 @@ var DRAG_Y = -1
 var MESSAGETIMER = -1
 var EXPECTED = true //True means the bot was supposed to accepted, false means the bot was supposed to be rejected.
 var RESULT = true //True means you won. False means you lost.
+var TESTSTEPS = 0 //How long it takes the tests to run.
 
 var BOT_PREVX = BOT_X
 var BOT_PREVY = BOT_Y
@@ -116,10 +118,10 @@ var SUBMENU = {
 var BUTTON_SELECTED = undefined
 var ITEM_SELECTED = undefined
 
-var KEY_ROTATION_RIGHT = ["d","l","6","ArrowRight"]
-var KEY_ROTATION_LEFT = ["a","h","4","ArrowLeft"]
-var KEY_ROTATION_UP = ["w","k","8","ArrowUp"]
-var KEY_ROTATION_DOWN = ["s","j","2","ArrowDown"]
+var KEY_ROTATION_RIGHT = ["D","L","d","l","6","ArrowRight"]
+var KEY_ROTATION_LEFT = ["A","G","a","h","4","ArrowLeft"]
+var KEY_ROTATION_UP = ["W","K","w","k","8","ArrowUp"]
+var KEY_ROTATION_DOWN = ["S","J","s","j","2","ArrowDown"]
 
 var CONVEYOR_BUILD_BUTTON = {img:IMAGE_CONVEYOR,x:-1,y:-1,w:-1,h:-1,lastselected:DEF_CONVEYOR}
 var BRANCH_BUILD_BUTTON = {img:IMAGE_BRANCH,x:-1,y:-1,w:-1,h:-1,submenu_buttons:[DEF_BRANCHUP_RB,DEF_BRANCHUP_BR,DEF_BRANCHUP_GY,DEF_BRANCHUP_YG,DEF_BRANCHUP_PPI,DEF_BRANCHUP_PIP,DEF_BRANCHUP_BLGR,DEF_BRANCHUP_GRBL],lastselected:undefined}
@@ -139,10 +141,22 @@ var RESET_BUTTON = {img:IMAGE_RESET,x:-1,y:-1,w:-1,h:-1,cb:resetSimulation
 }
 var DELETE_BUTTON = {img:IMAGE_DELETE,x:-1,y:-1,w:-1,h:-1,cb:toggleDeleteMode
 }
+var HOME_BUTTON = {img:IMAGE_HOME,x:-1,y:-1,w:-1,h:-1,cb:goHome
+}
 
 var MENU = {
 	visible:true,
-	buttons:[CONVEYOR_BUILD_BUTTON,BRANCH_BUILD_BUTTON,WRITER_BUILD_BUTTON,ROTATE_COUNTERCLOCKWISE_BUTTON,ROTATE_CLOCKWISE_BUTTON,DELETE_BUTTON,PLAY_BUTTON,RESET_BUTTON]
+	buttons:[CONVEYOR_BUILD_BUTTON,BRANCH_BUILD_BUTTON,WRITER_BUILD_BUTTON,ROTATE_COUNTERCLOCKWISE_BUTTON,ROTATE_CLOCKWISE_BUTTON,DELETE_BUTTON,PLAY_BUTTON,RESET_BUTTON,HOME_BUTTON]
+}
+
+function saveLevelData() {
+	completedStages[gameStage.name].data=deepCopy(gameGrid)
+	localStorage.setItem("game",JSON.stringify(completedStages))
+}
+
+function goHome() {
+	saveLevelData()
+	gameState=MAINMENU
 }
 
 function runGameSimulation(){
@@ -158,7 +172,7 @@ function runGameSimulation(){
 			if (BOT_QUEUE.length>0) {
 				BOT_TAPE=BOT_QUEUE[0]
 			} else {
-				BOT_TAPE="BR"
+				BOT_TAPE=ConvertNumberToTape(Math.floor(Math.random()*1000))
 			}
 			BOT_X=gameStage.start.x
 			BOT_Y=gameStage.start.y
@@ -173,6 +187,12 @@ function runGameSimulation(){
 			}
 			gameState=RUNNING
 			MESSAGETIMER=new Date().getTime()+3000
+			for (var i=0;i<MENU.buttons.length;i++) {
+				if (MENU.buttons[i].img===IMAGE_PLAY) {
+					MENU.buttons[i]=PAUSE_BUTTON
+					break;
+				}
+			}
 		},300)
 	}
 	gameState=RUNNING
@@ -298,6 +318,30 @@ var STAGE2 = {
 	}
 
 var gameGrid = []
+var completedStages = {"Blue Blue":{data:[],complete:false}} //Example completed structure.
+
+function setCookie(cname, cvalue, exdays) {
+  var d = new Date();
+  d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+  var expires = "expires="+d.toUTCString();
+  document.cookie = cname + "=" + cvalue + ";" + expires + ";";
+}
+
+function getCookie(cname) {
+  var name = cname + "=";
+  var ca = document.cookie.split(';');
+  for(var i = 0; i < ca.length; i++) {
+    var c = ca[i];
+    while (c.charAt(0) == ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) == 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return "";
+}
+
 
 function createGrid(width=5,height=5,exitX=4,exitY=2) {
 	var grid = []
@@ -322,11 +366,13 @@ function resetGame() {
 	BOT_TAPE="RB"
 	BOT_QUEUE=[]
 	lastGameUpdate=0
+	completedStages={}
 }
 
 function generateBotQueue() {
 	BOT_QUEUE=[]
 	RESULT=true
+	TESTSTEPS=0
 	if (gameState===TESTING) {
 		//Iterate up to...15 RED/BLUE combinations.
 		var MAX_VALUE=1000
@@ -353,6 +399,11 @@ function generateBotQueue() {
 				break;
 			}
 		}
+		if (RESULT) {
+			completedStages[gameStage.name].complete=true
+			completedStages[gameStage.name].score=TESTSTEPS
+		}
+		//console.log("Test Steps: "+TESTSTEPS)
 	}
 }
 
@@ -363,6 +414,7 @@ function getSimulatedBotResult(tape) {
 	var iterations=0
 	while (iterations<MAX_ITERATIONS) {
 		runBot(true)
+		TESTSTEPS++
 		if (gameState===REVIEWING) {
 			//console.log("Rejected")
 			return false
@@ -372,6 +424,9 @@ function getSimulatedBotResult(tape) {
 			return true
 		}
 		iterations++
+	}
+	if (iterations===MAX_ITERATIONS) {
+		TESTSTEPS=-1
 	}
 	return false
 }
@@ -474,6 +529,7 @@ function runBot(testing) {
 				case "EXIT":{
 					gameState=FINISH
 					BOT_STATE=DONE
+					endARound()
 				}break;
 			}
 			//console.log("Direction is now "+BOT_DIR)
@@ -510,6 +566,13 @@ function setupGame() {
 	canvas.addEventListener("touchstart",clickEvent)
 	canvas.addEventListener("touchend",releaseEvent)
 	document.addEventListener("keydown",keydownEvent)
+	try {
+		completedStages = JSON.parse(localStorage.getItem("game"))
+		if (!completedStages) {
+			completedStages={}
+		}
+	}catch{}
+	console.log(completedStages)
 	loadStage(STAGE2)
 }
 
@@ -662,6 +725,14 @@ function loadStage(stage) {
 	//gameGrid=deepCopy(stage.level)
 	loadLevel(stage.level,stage.start.x,stage.start.y)
 	gameStage=stage
+	if (completedStages[stage.name]===undefined) {
+		completedStages[stage.name]={}
+	} else {
+		if (completedStages[stage.name].data!==undefined) {
+			gameGrid = deepCopy(completedStages[stage.name].data)
+			console.log(gameGrid)
+		}
+	}
 }
 
 function deepCopy(arr) {
@@ -807,16 +878,20 @@ function draw() {
 		ctx.fillStyle="#b5c4c1"
 		ctx.globalAlpha=1.0
 		ctx.fillRect(0,0,canvas.width,canvas.height)
-		renderGame(ctx)
-		
-		if (ITEM_SELECTED&&!MOBILE) {
-			RenderIcon(LAST_MOUSE_X-16,LAST_MOUSE_Y-16,ctx,ITEM_SELECTED,ITEM_DIRECTION)
+		if (gameState!==MAINMENU) {
+			renderGame(ctx)
+			
+			if (ITEM_SELECTED&&!MOBILE) {
+				RenderIcon(LAST_MOUSE_X-16,LAST_MOUSE_Y-16,ctx,ITEM_SELECTED,ITEM_DIRECTION)
+			}
+			//drawImage(0,0,IMAGE_CONVEYOR,ctx,0)
+			//drawImage(LAST_MOUSE_X,LAST_MOUSE_Y,IMAGE_ARROW,ctx,0)
+			RenderSubmenu(ctx)
+			RenderMenu(ctx)
+			RenderGameInfo(ctx)
+		} else {
+			
 		}
-		//drawImage(0,0,IMAGE_CONVEYOR,ctx,0)
-		//drawImage(LAST_MOUSE_X,LAST_MOUSE_Y,IMAGE_ARROW,ctx,0)
-		RenderSubmenu(ctx)
-		RenderMenu(ctx)
-		RenderGameInfo(ctx)
 	}
 }
 
@@ -909,6 +984,27 @@ function RenderSpeedbar(x,y,w,ctx) {
 	ctx.stroke();
 }
 
+function DrawWrapText(text,x,y,w,fontHeight,ctx) {
+	var arr = text.split(" ")
+	var finalText = []
+	for (var i=0;i<arr.length;i++) {
+		var tempText = (finalText[finalText.length-1]!==undefined)?finalText[finalText.length-1]+" "+arr[i]:arr[i]
+		var newWidth = ctx.measureText(tempText).width
+		if (newWidth>w) {
+			finalText.push(arr[i])
+		} else {
+			if (finalText.length===0) {
+				finalText.push(arr[i])
+			} else {
+				finalText[finalText.length-1]+=" "+arr[i]
+			}
+		}
+	}
+	for (var i=0;i<finalText.length;i++) {
+		ctx.fillText(finalText[finalText.length-1-i],x,y-i*fontHeight+4)
+	}
+}
+
 function RenderGameInfo(ctx) {
 	if (MENU.visible) {
 		ctx.fillStyle="#20424a"
@@ -916,20 +1012,26 @@ function RenderGameInfo(ctx) {
 		
 		RenderSpeedbar(canvas.width*0.75+(canvas.width*0.25)/2-32,8,64,ctx)
 		
+		if (completedStages[gameStage.name]!==undefined&&completedStages[gameStage.name].complete) {
+			drawImage(canvas.width-18,14,IMAGE_COMPLETE_STAR,ctx,0,0.75)
+		} else {
+			drawImage(canvas.width-18,14,IMAGE_INCOMPLETE_STAR,ctx,0,0.75)
+		}
+		
 		RenderTape(canvas.width*0.75+8,16,canvas.width*0.25-16,ctx)
 		
 		if (gameState===RUNNING||gameState===REVIEWING||gameState===FINISH||gameState===PAUSED) {
 			ctx.font="16px 'Zilla Slab', serif"
 			ctx.fillStyle="white"
 			ctx.textAlign = "center"
-			ctx.fillText("Expected Result: ",canvas.width-canvas.width*0.25/2,canvas.height-120)
+			ctx.fillText("Expected Result: ",canvas.width-canvas.width*0.25/2,canvas.height-120-40)
 			
 			if (EXPECTED) {
 				ctx.fillStyle="rgb(52, 235, 140)"
-				ctx.fillText(" ACCEPT",canvas.width-canvas.width*0.25/2,canvas.height-100)
+				ctx.fillText(" ACCEPT",canvas.width-canvas.width*0.25/2,canvas.height-100-40)
 			} else {
 				ctx.fillStyle="rgb(235, 98, 52)"
-				ctx.fillText(" REJECT",canvas.width-canvas.width*0.25/2,canvas.height-100)
+				ctx.fillText(" REJECT",canvas.width-canvas.width*0.25/2,canvas.height-100-40)
 			}
 		}
 		
@@ -945,43 +1047,42 @@ function RenderGameInfo(ctx) {
 		
 		var currentTime = new Date().getTime();
 		if (currentTime<MESSAGETIMER) {
-			ctx.font="24px 'Zilla Slab', serif"
-			ctx.fillStyle=(RESULT)?"green":"rgb(144, 12, 63)"
+			ctx.font="bold 24px 'Zilla Slab', serif"
+			ctx.fillStyle=(RESULT)?"rgb(32, 59, 33)":"rgb(144, 12, 63)"
 			ctx.textAlign = "center"
-			var screenText = []
-			var quotearr = (RESULT)?GOODQUOTES[MESSAGETIMER%GOODQUOTES.length].split(" "):BADQUOTES[MESSAGETIMER%BADQUOTES.length].split(" ")
-			for (var i=0;i<quotearr.length;i++) {
-				var tempText = screenText+" "+quotearr[i]
-				var newWidth = ctx.measureText(tempText).width
-				if (newWidth>(canvas.width*0.75)-48) {
-					screenText.push(quotearr[i])
-				} else {
-					if (screenText.length===0) {
-						screenText.push(quotearr[i])
-					} else {
-						screenText[screenText.length-1]+=" "+quotearr[i]
-					}
-				}
-			}
-			for (var i=0;i<screenText.length;i++) {
-				ctx.fillText(screenText[screenText.length-1-i],(canvas.width*0.75)/2,canvas.height*0.75-i*28)
-			}
+			DrawWrapText((RESULT)?GOODQUOTES[MESSAGETIMER%GOODQUOTES.length]:BADQUOTES[MESSAGETIMER%BADQUOTES.length],(canvas.width*0.75)/2,canvas.height*0.75,(canvas.width*0.75)*0.9,24,ctx)
 		}
+		
+		var levelDescriptionOffsetY = -16
+		ctx.font="bold 20px 'Zilla Slab', serif"
+		ctx.fillStyle="rgb(52, 227, 160)"
+		ctx.textAlign = "center"
+		ctx.fillText(gameStage.name,(canvas.width*0.75)+(canvas.width*0.25)/2,canvas.height-100+levelDescriptionOffsetY)
+		ctx.strokeStyle="white"
+		ctx.lineWidth=1
+		ctx.beginPath()
+		ctx.moveTo((canvas.width*0.75)+(canvas.width*0.25)/4,canvas.height-94+levelDescriptionOffsetY)
+		ctx.lineTo((canvas.width*0.75)+((canvas.width*0.25))*0.75,canvas.height-94+levelDescriptionOffsetY)
+		ctx.stroke()
+		ctx.font="12px 'Zilla Slab', serif"
+		ctx.fillStyle="white"
+		ctx.textAlign ="left"
+		DrawWrapText(gameStage.objective,(canvas.width*0.75)+8,canvas.height-66+levelDescriptionOffsetY,(canvas.width*0.25)*0.9,12,ctx)
 	
-		if (MOBILE) {
-			drawImage(canvas.width-96+24,canvas.height-96+32,
+		if (MOBILE&&gameState!==RUNNING) {
+			drawImage(canvas.width*0.75-48,canvas.height*0.8-48,
 			IMAGE_OUTLINE,ctx,0)
 			if (ITEM_SELECTED) {
 				if (ITEM_SELECTED.img===IMAGE_CONVEYOR) {
-					RenderIcon(canvas.width-48-38-16,canvas.height-48-32-16,ctx,ITEM_SELECTED,ITEM_DIRECTION,undefined,undefined,2)
+					RenderIcon(canvas.width*0.75-48-32,canvas.height*0.8-48-32,ctx,ITEM_SELECTED,ITEM_DIRECTION,undefined,undefined,2)
 				} else {
-					RenderIcon(canvas.width-48-38,canvas.height-48-32,ctx,ITEM_SELECTED,ITEM_DIRECTION,undefined,undefined,2)
+					RenderIcon(canvas.width*0.75-48-16,canvas.height*0.8-48-16,ctx,ITEM_SELECTED,ITEM_DIRECTION,undefined,undefined,2)
 				}
 			} else {
 				if (DELETEMODE) {
-					drawImage(canvas.width-48-24,canvas.height-48-16,IMAGE_DELETE_CURSOR,ctx,0,2)
+					drawImage(canvas.width*0.75-48,canvas.height*0.8-48,IMAGE_DELETE_CURSOR,ctx,0,2)
 				} else {
-					drawImage(canvas.width-48-24,canvas.height-48-16,IMAGE_CURSOR,ctx,0,2)
+					drawImage(canvas.width*0.75-48,canvas.height*0.8-48,IMAGE_CURSOR,ctx,0,2)
 				}
 			}
 		}
@@ -991,7 +1092,11 @@ function RenderGameInfo(ctx) {
 function RenderTape(x,y,width,ctx) {
 	var xOffset=0
 	var yOffset=0
-	for (var i=0;i<Math.min(BOT_TAPE.length,64);i++) {
+	var ySpacingMult=1
+	if (BOT_TAPE.length>5*5) {
+		ySpacingMult=(24*5)/(Math.ceil(BOT_TAPE.length/5)*24)
+	}
+	for (var i=0;i<Math.min(BOT_TAPE.length,1024);i++) {
 		switch (BOT_TAPE[i]) {
 			case RED:{
 				drawImage(x+xOffset+16,y+yOffset+16,IMAGE_DOT_R,ctx,0)
@@ -1023,7 +1128,7 @@ function RenderTape(x,y,width,ctx) {
 		xOffset+=24;
 		if (xOffset>width-24) {
 			xOffset=0;
-			yOffset+=24;
+			yOffset+=24*ySpacingMult;
 		}
 	}
 }
@@ -1336,7 +1441,7 @@ function RenderMenu(ctx) {
 			button.y=buttonY
 			button.w=32
 			button.h=32
-			buttonX+=48
+			buttonX+=47
 		}
 	}
 }
