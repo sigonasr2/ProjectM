@@ -220,12 +220,21 @@ function toggleDeleteMode(){
 }
 
 function rotateClockwise() {
-	ITEM_DIRECTION=(ITEM_DIRECTION+1)%4
+	ITEM_DIRECTION=getClockwiseDirection(ITEM_DIRECTION)
 }
 function rotateCounterClockwise() {
-	ITEM_DIRECTION=(ITEM_DIRECTION-1);
-	if(ITEM_DIRECTION<0){ITEM_DIRECTION=3}
+	ITEM_DIRECTION=getCounterClockwiseDirection(ITEM_DIRECTION)
 }
+function getClockwiseDirection(dir) {
+	return (dir+1)%4
+}
+function getCounterClockwiseDirection(dir) {
+	var newdir=dir;
+	newdir=(newdir-1);
+	if(newdir<0){newdir=3}
+	return newdir;
+}
+
 
 
 var lastGameUpdate = 0;
@@ -1170,15 +1179,27 @@ function DrawConnectedConveyor(x,y,ctx,connections,dir,scale,pass=0) {
 	}
 }
 
+function HasRelativeConnection(x,y,dir) {
+	return (gameGrid[y][x].direction===dir ||
+		(
+			gameGrid[y][x].type==="BRANCH" &&
+			(gameGrid[y][x].direction===getClockwiseDirection(dir) || gameGrid[y][x].direction===getCounterClockwiseDirection(dir))
+		) ||
+		(
+			x===gameStage.start.x&&y===gameStage.start.y
+		)
+	)
+}
+
 function RenderConveyor(x,y,ctx,icon_definition,dir=0,background=undefined,grid=undefined,scale) {
 	if (grid===undefined) {
 		DrawSingleConveyor(x,y,dir,ctx,scale)
 	} else {
 		var connections = {}
-		if (grid.x>0) {if (gameGrid[grid.y][grid.x-1].direction===RIGHT){connections[LEFT]=true}}
-		if (grid.x<gameGrid[grid.y].length-1) {if (gameGrid[grid.y][grid.x+1].direction===LEFT){connections[RIGHT]=true}}
-		if (grid.y>0) {if (gameGrid[grid.y-1][grid.x].direction===DOWN){connections[UP]=true}}
-		if (grid.y<gameGrid.length-1) {if (gameGrid[grid.y+1][grid.x].direction===UP){connections[DOWN]=true}}
+		if (grid.x>0) {if (HasRelativeConnection(grid.x-1,grid.y+0,RIGHT)){connections[LEFT]=true}}
+		if (grid.x<gameGrid[grid.y].length-1) {if (HasRelativeConnection(grid.x+1,grid.y+0,LEFT)){connections[RIGHT]=true}}
+		if (grid.y>0) {if (HasRelativeConnection(grid.x+0,grid.y-1,DOWN)){connections[UP]=true}}
+		if (grid.y<gameGrid.length-1) {if (HasRelativeConnection(grid.x+0,grid.y+1,UP)){connections[DOWN]=true}}
 		//console.log("Connections: "+JSON.stringify(connections))
 		DrawConnectedConveyor(x,y,ctx,connections,dir,scale)
 		DrawConnectedConveyor(x,y,ctx,connections,dir,scale,1)
