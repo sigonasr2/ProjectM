@@ -319,7 +319,7 @@ function runTests() {
 		expect(BOT_QUEUE.length===0&&gameState!==TESTING,true,"Bot queue should not be modified while state is not TESTING")
 		gameState=TESTING
 		generateBotQueue()
-		expect(BOT_QUEUE.length===3,true,"There should be 3 bots in queue for an unbuilt level, as all bots are supposed to pass.")
+		expect(BOT_QUEUE.length>=3,true,"There should be at least 3 bots in queue for an unbuilt level, as all bots are supposed to pass.")
 	})
 	.it("A stage should have an Exit.",()=>{
 		loadStage(STAGE1)
@@ -417,7 +417,7 @@ function runTests() {
 		expect(BOT_QUEUE.length===0&&gameState!==TESTING,true,"Bot queue should not be modified while state is not TESTING")
 		gameState=TESTING
 		generateBotQueue()
-		expect(BOT_QUEUE.length===3,true,"There should be 3 bots in queue for an unbuilt level, as there are cases that do not pass.")
+		expect(BOT_QUEUE.length>=3,true,"There should be at least 3 bots in queue for an unbuilt level, as there are cases that do not pass.")
 	})
 	.it("A stage should have an Exit.",()=>{
 		loadStage(STAGE2)

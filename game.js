@@ -218,7 +218,10 @@ var MENU = {
 	buttons:[CONVEYOR_BUILD_BUTTON,BRANCH_BUILD_BUTTON,WRITER_BUILD_BUTTON,ROTATE_COUNTERCLOCKWISE_BUTTON,ROTATE_CLOCKWISE_BUTTON,DELETE_BUTTON,PLAY_BUTTON,RESET_BUTTON,HOME_BUTTON]
 }
 
-
+var TUTORIALMENU={
+	title:"Introduction to Conversion",
+	levels:[]
+}
 
 function saveLevelData() {
 	completedStages[gameStage.name].data=deepCopy(gameGrid)
@@ -388,6 +391,51 @@ var STAGE2 = {
 			return true;
 		}
 	}
+var TUTORIAL1 = {
+	name:"Conveyors!",
+	objective:"To convert your robots, you must send them from the entrance to the exit. Select a belt and send robots to where they truly belong.",
+	level:createGrid(5,5,4,2),
+	start:{x:0,y:2},
+	locked:[BRANCH_BUILD_BUTTON,WRITER_BUILD_BUTTON],
+	tutorial:true,
+	accept:(tape)=>{
+			return true;
+		}
+	}
+var TUTORIAL2 = {
+	name:"Branches",
+	objective:"We have to make sure we are sending robots that meet our needs! Use the branch to filter out robots that start with a red signal. Send only those to the exit!",
+	level:createGrid(5,5,4,2),
+	start:{x:0,y:2},
+	locked:[WRITER_BUILD_BUTTON],
+	tutorial:true,
+	accept:(tape)=>{
+			if (tape[0]===RED) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+	}
+var TUTORIAL3 = {
+	name:"Writers",
+	objective:"CONVERSION! It's time to convert robots to what they should be. Add 3 blue signals to every bot that comes through. We shall convert them all!",
+	level:createGrid(5,5,4,2),
+	start:{x:0,y:2},
+	tutorial:true,
+	accept:(tape)=>{
+			return true;
+		}
+	}
+var TUTORIAL4 = {
+	name:"More Colors",
+	objective:"You may be required to use different colors, either for your purposes or mine. For this robot cycle, convert all blue and red signals to yellow signals.",
+	level:createGrid(5,5,4,2),
+	start:{x:0,y:2},
+	accept:(tape)=>{
+			return true;
+		}
+	}
 
 var gameGrid = []
 var completedStages = {"Blue Blue":{data:[],complete:false}} //Example completed structure.
@@ -467,7 +515,24 @@ function generateBotQueue() {
 				RESULT=false
 				BOT_QUEUE.push(tape)
 			}
-			if (BOT_QUEUE.length===3) {
+			var reversedTape=tape.split("").reverse().join("")
+			//console.log(tape)
+			var wrongBot=false //Set to true if a bot that's supposed to pass fails, or a bot that's supposed to fail passes.
+			var isSupposedToBeAccepted=gameStage.accept(reversedTape)
+			var result=getSimulatedBotResult(reversedTape)
+			if (result===isSupposedToBeAccepted) {
+				wrongBot=false;
+			} else {
+				wrongBot=true;
+			}
+			if (wrongBot) {
+				if (BOT_QUEUE.length===0) {
+					EXPECTED = isSupposedToBeAccepted;
+				}
+				RESULT=false
+				BOT_QUEUE.push(reversedTape)
+			}
+			if (BOT_QUEUE.length>=3) {
 				break;
 			}
 		}
@@ -645,8 +710,8 @@ function setupGame() {
 		}
 	}catch{}
 	//console.log(completedStages)
-	//loadStage(STAGE2)
-	gameState=MAINMENU
+	loadStage(TUTORIAL4)
+	//gameState=MAINMENU
 }
 
 function setupTitleScreen() {
@@ -706,28 +771,30 @@ function clickEvent(e) {
 	
 	if (MENU.visible) {
 		for (var button of MENU.buttons) {
-			if (mouseOverButton(canvas,e,button)) {
-				if (button.cb!==undefined) {
-					button.cb()
-					return;
-				} else {
-					DELETEMODE=false
-					document.body.style.cursor="url('cursor.png') 8 8,auto"
-					if (button.submenu_buttons&&button.submenu_buttons.length>0) {
-						BUTTON_SELECTED=button;
-						SUBMENU.visible=true;
-						SUBMENU.buttons=[]
-						var index = 0;
-						for (var button2 of BUTTON_SELECTED.submenu_buttons) {
-							var buttonX = ((index%3)*48)+16
-							var buttonY = canvas.height*0.8-(Math.floor(index/3)*48)-40
-							SUBMENU.buttons.push({def:button2,img:button2.img,x:buttonX,y:buttonY,w:32,h:32})
-							index++;
+			if (ButtonIsUnlocked(button)) {
+				if (mouseOverButton(canvas,e,button)) {
+					if (button.cb!==undefined) {
+						button.cb()
+						return;
+					} else {
+						DELETEMODE=false
+						document.body.style.cursor="url('cursor.png') 8 8,auto"
+						if (button.submenu_buttons&&button.submenu_buttons.length>0) {
+							BUTTON_SELECTED=button;
+							SUBMENU.visible=true;
+							SUBMENU.buttons=[]
+							var index = 0;
+							for (var button2 of BUTTON_SELECTED.submenu_buttons) {
+								var buttonX = ((index%3)*48)+16
+								var buttonY = canvas.height*0.8-(Math.floor(index/3)*48)-40
+								SUBMENU.buttons.push({def:button2,img:button2.img,x:buttonX,y:buttonY,w:32,h:32})
+								index++;
+							}
 						}
+						ITEM_SELECTED=button.lastselected
+						//console.log(button)
+						return
 					}
-					ITEM_SELECTED=button.lastselected
-					//console.log(button)
-					return
 				}
 			}
 		}
@@ -808,12 +875,14 @@ function releaseEvent(e) {
 function loadLevel(level,botx,boty) {
 	placeBot(botx,boty)
 	gameGrid = deepCopy(level)
+	MENU.visible=true
 }
 
 function loadStage(stage) {
 	//gameGrid=deepCopy(stage.level)
 	loadLevel(stage.level,stage.start.x,stage.start.y)
 	gameStage=stage
+	ITEM_SELECTED=undefined
 	if (completedStages[stage.name]===undefined) {
 		completedStages[stage.name]={}
 	} else {
@@ -822,6 +891,7 @@ function loadStage(stage) {
 			console.log(gameGrid)
 		}
 	}
+	
 }
 
 function deepCopy(arr) {
@@ -1112,7 +1182,7 @@ function RenderSpeedbar(x,y,w,ctx) {
 	ctx.stroke();
 }
 
-function DrawWrapText(text,x,y,w,fontHeight,ctx) {
+function DrawWrapText(text,x,y,w,fontHeight,ctx,topToBottom=false/*Set to true to draw from the position downward. Defaults to drawing upwards.*/) {
 	var arr = text.split(" ")
 	var finalText = []
 	for (var i=0;i<arr.length;i++) {
@@ -1129,8 +1199,16 @@ function DrawWrapText(text,x,y,w,fontHeight,ctx) {
 		}
 	}
 	for (var i=0;i<finalText.length;i++) {
-		ctx.fillText(finalText[finalText.length-1-i],x,y-i*fontHeight+4)
+		if (topToBottom) {
+			ctx.fillText(finalText[i],x,y+i*fontHeight+4)
+		} else {
+			ctx.fillText(finalText[finalText.length-1-i],x,y-i*fontHeight+4)
+		}
 	}
+}
+
+function LevelIsBeat(levelName) {
+	return completedStages[levelName]!==undefined&&completedStages[levelName].complete
 }
 
 function RenderGameInfo(ctx) {
@@ -1140,7 +1218,7 @@ function RenderGameInfo(ctx) {
 		
 		RenderSpeedbar(canvas.width*0.75+(canvas.width*0.25)/2-32,8,64,ctx)
 		
-		if (completedStages[gameStage.name]!==undefined&&completedStages[gameStage.name].complete) {
+		if (LevelIsBeat(gameStage.name)) {
 			drawImage(canvas.width-18,14,ID_COMPLETE_STAR,ctx,0,0.75)
 		} else {
 			drawImage(canvas.width-18,14,ID_INCOMPLETE_STAR,ctx,0,0.75)
@@ -1195,7 +1273,7 @@ function RenderGameInfo(ctx) {
 		ctx.font="12px 'Zilla Slab', serif"
 		ctx.fillStyle="white"
 		ctx.textAlign ="left"
-		DrawWrapText(gameStage.objective,(canvas.width*0.75)+8,canvas.height-66+levelDescriptionOffsetY,(canvas.width*0.25)*0.9,12,ctx)
+		DrawWrapText(gameStage.objective,(canvas.width*0.75)+8,canvas.height-84+levelDescriptionOffsetY,(canvas.width*0.25)*0.9,12,ctx,true)
 	
 		if (MOBILE&&gameState!==RUNNING) {
 			drawImage(canvas.width*0.75-48,canvas.height*0.8-48,
@@ -1545,12 +1623,25 @@ function RenderSubmenu(ctx) {
 		ctx.fillRect(0,canvas.height*0.8-submenuRows*48-16,submenuCols*48+16,submenuRows*48+16)
 		var index = 0;
 		for (var button of BUTTON_SELECTED.submenu_buttons) {
-			var buttonX = ((index%3)*48)+16
-			var buttonY = canvas.height*0.8-(Math.floor(index/3)*48)-40
-			RenderIcon(buttonX,buttonY,ctx,button,ITEM_DIRECTION,(LAST_MOUSE_X>=buttonX&&LAST_MOUSE_X<=buttonX+32&&LAST_MOUSE_Y>=buttonY&&LAST_MOUSE_Y<=buttonY+32)?"#555555":"#b5b5b5")
-			index++;
+			if (SubmenuButtonIsUnlocked(button)) {
+				var buttonX = ((index%3)*48)+16
+				var buttonY = canvas.height*0.8-(Math.floor(index/3)*48)-40
+				RenderIcon(buttonX,buttonY,ctx,button,ITEM_DIRECTION,(LAST_MOUSE_X>=buttonX&&LAST_MOUSE_X<=buttonX+32&&LAST_MOUSE_Y>=buttonY&&LAST_MOUSE_Y<=buttonY+32)?"#555555":"#b5b5b5")
+				index++;
+			}
 		}
 	}
+}
+
+function SubmenuButtonIsUnlocked(button) {
+	return gameStage.tutorial===undefined||!gameStage.tutorial||button.color1===RED||button.color1===BLUE
+}
+
+function ButtonIsUnlocked(button) {
+	if (button===HOME_BUTTON&&gameStage.tutorial&&!LevelIsBeat(gameStage.name)) {
+		return false
+	}
+	return gameStage.locked===undefined||(!gameStage.locked.includes(button))
 }
 
 function RenderMenu(ctx) {
@@ -1560,10 +1651,12 @@ function RenderMenu(ctx) {
 		var buttonX = 16
 		var buttonY = canvas.height*0.8+16
 		for (var button of MENU.buttons) {
-			if (button.lastselected) {
-				RenderIcon(buttonX,buttonY,ctx,button.lastselected,(button.cb===undefined)?ITEM_DIRECTION:0,"#b5b5b5")
-			} else {
-				AddButton(button.img,buttonX,buttonY,ctx,button,(button.cb===undefined)?ITEM_DIRECTION:0)
+			if (ButtonIsUnlocked(button)) {
+				if (button.lastselected) {
+					RenderIcon(buttonX,buttonY,ctx,button.lastselected,(button.cb===undefined)?ITEM_DIRECTION:0,"#b5b5b5")
+				} else {
+					AddButton(button.img,buttonX,buttonY,ctx,button,(button.cb===undefined)?ITEM_DIRECTION:0)
+				}
 			}
 			button.x=buttonX
 			button.y=buttonY
