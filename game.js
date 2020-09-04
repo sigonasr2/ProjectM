@@ -710,8 +710,9 @@ function setupGame() {
 		}
 	}catch{}
 	//console.log(completedStages)
-	loadStage(TUTORIAL4)
+	//loadStage(TUTORIAL4)
 	//gameState=MAINMENU
+	gameState=STARTUP
 }
 
 function setupTitleScreen() {
