@@ -13,6 +13,73 @@ const BADQUOTES=[
 "???",
 "You seemed to miss a step...",]
 
+var TITLESCREENTIMELINE=new Date().getTime()
+
+const TITLETIMELINE = [
+				{time:0,cb:
+					(ctx)=>{
+						SCENE_DRAW=(ctx)=>{
+							ctx.globalAlpha=Math.min((new Date().getTime()-TITLESCREENTIMELINE)/3000,1)
+							ctx.drawImage(IMAGE_SIG,canvas.width/2-243,canvas.height/2-22)
+						}
+					}
+				},
+				{time:4000,cb:
+					(ctx)=>{
+						SCENE_DRAW=(ctx)=>{
+							ctx.globalAlpha=Math.max(
+							(7000-(new Date().getTime()-TITLESCREENTIMELINE))/3000
+							,0)
+							ctx.drawImage(IMAGE_SIG,canvas.width/2-243,canvas.height/2-22)
+						}
+					}
+				},
+				{time:6500,cb:
+					(ctx)=>{
+						var audio = new Audio("Super 8 Old Movie Projector - Gaming Sound Effect.mp3")
+						audio.play()
+					}
+				},
+				{time:7000,cb:
+					(ctx)=>{
+						SCENE_DRAW=(ctx)=>{
+							SCENEALPHA=0
+							if (Math.random()<=0.02) {
+								ctx.globalAlpha=0.5
+								ctx.drawImage(IMAGE_TITLE,canvas.width/2+Math.random()*640260,canvas.height/2+Math.random()*64-70)
+							} else {
+								ctx.globalAlpha=0.75+Math.random()*0.25
+								ctx.drawImage(IMAGE_TITLE,canvas.width/2-260,canvas.height/2-70)
+							}
+						}
+					}
+				},
+				{time:15000,cb:
+					(ctx)=>{
+						backgroundMusic.loop=true
+						backgroundMusic.play()
+						SCENE_DRAW=(ctx)=>{
+							ctx.globalAlpha=0.9
+							ctx.drawImage(IMAGE_TITLE,canvas.width/2-260,canvas.height/2-70)
+							
+							ctx.font="bold 48px 'Zilla Slab', serif"
+							ctx.fillStyle="black"
+							ctx.strokeStyle="white"
+							ctx.textAlign = "center"
+							ctx.fillText("- Click to Play -",canvas.width/2,canvas.height*0.9)
+							ctx.strokeText("- Click to Play -",canvas.width/2,canvas.height*0.9)
+						}
+					}
+				},
+			]
+			
+var backgroundMusic = new Audio("Shostakovich_ Symphony No. 9.mp3")
+var SCENEBACKGROUND = "black"
+var SCENEALPHA = 1.0
+			
+var CURRENTTIMELINE = []
+var SCENE_DRAW = ()=>{}
+
 const WAITING = 0;
 const RUNNING = 1;
 const REVIEWING = 2;
@@ -20,6 +87,8 @@ const TESTING = 3;
 const FINISH = 4;
 const PAUSED = 5;
 const MAINMENU = 6;
+const TITLE = 7;
+const STARTUP = 8;
 
 var ISTESTING = false;
 
@@ -145,9 +214,11 @@ var HOME_BUTTON = {img:ID_HOME,x:-1,y:-1,w:-1,h:-1,cb:goHome
 }
 
 var MENU = {
-	visible:true,
+	visible:false,
 	buttons:[CONVEYOR_BUILD_BUTTON,BRANCH_BUILD_BUTTON,WRITER_BUILD_BUTTON,ROTATE_COUNTERCLOCKWISE_BUTTON,ROTATE_CLOCKWISE_BUTTON,DELETE_BUTTON,PLAY_BUTTON,RESET_BUTTON,HOME_BUTTON]
 }
+
+
 
 function saveLevelData() {
 	completedStages[gameStage.name].data=deepCopy(gameGrid)
@@ -156,6 +227,7 @@ function saveLevelData() {
 
 function goHome() {
 	saveLevelData()
+	MENU.visible=false
 	gameState=MAINMENU
 }
 
@@ -572,8 +644,15 @@ function setupGame() {
 			completedStages={}
 		}
 	}catch{}
-	console.log(completedStages)
-	loadStage(STAGE2)
+	//console.log(completedStages)
+	//loadStage(STAGE2)
+	gameState=MAINMENU
+}
+
+function setupTitleScreen() {
+	gameState=TITLE
+	CURRENTTIMELINE=[...TITLETIMELINE]
+	TITLESCREENTIMELINE=new Date().getTime();
 }
 
 function CheckKeys(e,keys) {
@@ -615,6 +694,16 @@ function clickEvent(e) {
 	} else {
 		MOBILE=false
 	}
+	
+	if (gameState===STARTUP) {
+		setupTitleScreen()
+	}
+	if (gameState===TITLE) {
+		if (new Date().getTime()-TITLESCREENTIMELINE>=15000) {
+			gameState=MAINMENU
+		}
+	}
+	
 	if (MENU.visible) {
 		for (var button of MENU.buttons) {
 			if (mouseOverButton(canvas,e,button)) {
@@ -748,8 +837,10 @@ function deepCopy(arr) {
 
 function step() {
 	dashOffset+=0.1*Math.max((1000/gameSpeed),1)
-	if (gameState===RUNNING) {
-		runBot()
+	switch (gameState) {
+		case RUNNING:{
+			runBot()
+		}break;
 	}
 }
 
@@ -864,8 +955,19 @@ function drawImage(x,y,img,ctx,degrees,scale=1){
     ctx.translate(x,y);
     ctx.rotate(degrees*Math.PI/180);
 	ctx.scale(scale,scale)
-    ctx.drawImage(IMAGE_DATA[img],-IMAGE_DATA[img].width/2,-IMAGE_DATA[img].height/2);
+    ctx.drawImage(IMAGE_DATA[img],(IMAGE_DATA[img].width)?-IMAGE_DATA[img].width/2:0,(IMAGE_DATA[img].height)?-IMAGE_DATA[img].height/2:0);
     ctx.restore();
+}
+
+function runEvents(ctx) {
+	var elapsedTime= new Date().getTime()-TITLESCREENTIMELINE
+	if (CURRENTTIMELINE.length>0) {
+		var currentEvent = CURRENTTIMELINE[0]
+		if (currentEvent.time<elapsedTime) {
+			currentEvent.cb(ctx)
+			CURRENTTIMELINE.shift()
+		}
+	}
 }
 
 function draw() {
@@ -878,19 +980,45 @@ function draw() {
 		ctx.fillStyle="#b5c4c1"
 		ctx.globalAlpha=1.0
 		ctx.fillRect(0,0,canvas.width,canvas.height)
-		if (gameState!==MAINMENU) {
-			renderGame(ctx)
-			
-			if (ITEM_SELECTED&&!MOBILE) {
-				RenderIcon(LAST_MOUSE_X-16,LAST_MOUSE_Y-16,ctx,ITEM_SELECTED,ITEM_DIRECTION)
+		switch (gameState) {
+			case TITLE:{
+				ctx.save();
+				ctx.scale(1,1)
+				ctx.translate(260+320,100+320)
+				ctx.rotate((dashOffset)*(Math.PI/180))
+				ctx.translate(-320,-320)
+				ctx.drawImage(IMAGE_GEAR,0,0)
+				ctx.restore()
+				runEvents(ctx)
+				ctx.fillStyle=SCENEBACKGROUND
+				ctx.globalAlpha=SCENEALPHA
+				ctx.fillRect(0,0,canvas.width,canvas.height)
+				SCENE_DRAW(ctx)
+			}break;
+			case MAINMENU:{
+				
+			}break;
+			case STARTUP:{
+				ctx.fillStyle="black"
+				ctx.fillRect(0,0,canvas.width,canvas.height)
+				ctx.font="16px 'Zilla Slab', serif"
+				ctx.fillStyle="white"
+				ctx.textAlign = "left"
+				ctx.fillText("Booting...",0,24)
+				ctx.fillText("Click to begin",0,48)
+			}break;
+			default:{
+				renderGame(ctx)
+				
+				if (ITEM_SELECTED&&!MOBILE) {
+					RenderIcon(LAST_MOUSE_X-16,LAST_MOUSE_Y-16,ctx,ITEM_SELECTED,ITEM_DIRECTION)
+				}
+				//drawImage(0,0,ID_CONVEYOR,ctx,0)
+				//drawImage(LAST_MOUSE_X,LAST_MOUSE_Y,ID_ARROW,ctx,0)
+				RenderSubmenu(ctx)
+				RenderMenu(ctx)
+				RenderGameInfo(ctx)
 			}
-			//drawImage(0,0,ID_CONVEYOR,ctx,0)
-			//drawImage(LAST_MOUSE_X,LAST_MOUSE_Y,ID_ARROW,ctx,0)
-			RenderSubmenu(ctx)
-			RenderMenu(ctx)
-			RenderGameInfo(ctx)
-		} else {
-			
 		}
 	}
 }
