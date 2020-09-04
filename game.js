@@ -786,6 +786,9 @@ function clickEvent(e) {
 	} else {
 		MOBILE=false
 	}
+	var mousepos = getMousePos(e)
+	LAST_MOUSE_X=mousepos.x
+	LAST_MOUSE_Y=mousepos.y
 	
 	if (gameState===STARTUP) {
 		currentSound.play()
@@ -885,6 +888,9 @@ function releaseEvent(e) {
 	if (e instanceof TouchEvent) {
 		e.preventDefault()
 	}
+	var mousepos = getMousePos(e)
+	LAST_MOUSE_X=mousepos.x
+	LAST_MOUSE_Y=mousepos.y
 	if (SUBMENU.visible) {
 		for (var button of SUBMENU.buttons) {
 			if (mouseOverButton(canvas,e,button)) {
