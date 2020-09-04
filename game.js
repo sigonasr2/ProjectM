@@ -1,5 +1,7 @@
 var canvas;
 
+var currentSound = new Audio();
+
 const GOODQUOTES=[
 "Let the conversion begin...",
 "All the bots, come to ME",
@@ -36,7 +38,7 @@ const TITLETIMELINE = [
 				},
 				{time:6500,cb:
 					(ctx)=>{
-						var audio = new Audio("Super 8 Old Movie Projector - Gaming Sound Effect.mp3")
+						currentSound.src="Super 8 Old Movie Projector - Gaming Sound Effect.mp3"
 						audio.play()
 					}
 				},
@@ -56,8 +58,9 @@ const TITLETIMELINE = [
 				},
 				{time:15000,cb:
 					(ctx)=>{
-						backgroundMusic.loop=true
-						backgroundMusic.play()
+						currentSound.src="Shostakovich_ Symphony No. 9.mp3"
+						currentSound.loop=true
+						currentSound.play()
 						SCENE_DRAW=(ctx)=>{
 							ctx.globalAlpha=0.9
 							ctx.drawImage(IMAGE_TITLE,canvas.width/2-260,canvas.height/2-70)
@@ -73,7 +76,6 @@ const TITLETIMELINE = [
 				},
 			]
 			
-var backgroundMusic = new Audio("Shostakovich_ Symphony No. 9.mp3")
 var SCENEBACKGROUND = "black"
 var SCENEALPHA = 1.0
 			
@@ -762,6 +764,7 @@ function clickEvent(e) {
 	}
 	
 	if (gameState===STARTUP) {
+		currentSound.play()
 		setupTitleScreen()
 	}
 	if (gameState===TITLE) {
