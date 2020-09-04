@@ -39,7 +39,7 @@ const TITLETIMELINE = [
 				{time:6500,cb:
 					(ctx)=>{
 						currentSound.src="Super 8 Old Movie Projector - Gaming Sound Effect.mp3"
-						audio.play()
+						currentSound.play()
 					}
 				},
 				{time:7000,cb:
