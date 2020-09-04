@@ -36,7 +36,7 @@ const TITLETIMELINE = [
 						}
 					}
 				},
-				{time:6500,cb:
+				{time:4000,cb:
 					(ctx)=>{
 						currentSound.src="Super 8 Old Movie Projector - Gaming Sound Effect.mp3"
 						currentSound.play()
@@ -121,6 +121,8 @@ var BOT_QUEUE = []
 var DELETEMODE = false
 var DRAGGING = false
 var MOUSEDOWN = false
+var LAST_MOUSE_X=0;
+var LAST_MOUSE_Y=0;
 var DRAG_X = -1
 var DRAG_Y = -1
 
@@ -172,9 +174,6 @@ var GRID_H = 32
 var GRID_X = 20
 var GRID_Y = 20
 
-var LAST_MOUSE_X=0;
-var LAST_MOUSE_Y=0;
-
 var ITEM_DIRECTION=RIGHT;
 
 var dashOffset=0
@@ -195,13 +194,12 @@ var KEY_ROTATION_UP = ["W","K","w","k","8","ArrowUp"]
 var KEY_ROTATION_DOWN = ["S","J","s","j","2","ArrowDown"]
 
 var CONVEYOR_BUILD_BUTTON = {img:ID_CONVEYOR,x:-1,y:-1,w:-1,h:-1,lastselected:DEF_CONVEYOR}
-var BRANCH_BUILD_BUTTON = {img:ID_BRANCH,x:-1,y:-1,w:-1,h:-1,submenu_buttons:[DEF_BRANCHUP_RB,DEF_BRANCHUP_BR,DEF_BRANCHUP_GY,DEF_BRANCHUP_YG,DEF_BRANCHUP_PPI,DEF_BRANCHUP_PIP,DEF_BRANCHUP_BLGR,DEF_BRANCHUP_GRBL],lastselected:undefined}
-var WRITER_BUILD_BUTTON = {img:ID_WRITER,x:-1,y:-1,w:-1,h:-1,submenu_buttons:[DEF_WRITERRIGHT_R,DEF_WRITERRIGHT_B,DEF_WRITERRIGHT_G,DEF_WRITERRIGHT_Y,DEF_WRITERRIGHT_P,DEF_WRITERRIGHT_PI,DEF_WRITERRIGHT_BL,DEF_WRITERRIGHT_GR],lastselected:undefined}
+var BRANCH_BUILD_BUTTON = {img:ID_BRANCH,x:-1,y:-1,w:-1,h:-1,submenu_buttons:[DEF_BRANCHUP_RB,DEF_BRANCHUP_BR,DEF_BRANCHUP_GY,DEF_BRANCHUP_YG,DEF_BRANCHUP_PPI,DEF_BRANCHUP_PIP,DEF_BRANCHUP_BLGR,DEF_BRANCHUP_GRBL],lastselected:undefined,default:DEF_BRANCHUP_RB}
+var WRITER_BUILD_BUTTON = {img:ID_WRITER,x:-1,y:-1,w:-1,h:-1,submenu_buttons:[DEF_WRITERRIGHT_R,DEF_WRITERRIGHT_B,DEF_WRITERRIGHT_G,DEF_WRITERRIGHT_Y,DEF_WRITERRIGHT_P,DEF_WRITERRIGHT_PI,DEF_WRITERRIGHT_BL,DEF_WRITERRIGHT_GR],lastselected:undefined,default:DEF_WRITERRIGHT_R}
 var ROTATE_CLOCKWISE_BUTTON = {img:ID_ROTATE_CLOCKWISE,x:-1,y:-1,w:-1,h:-1,cb:rotateClockwise
 }
 var ROTATE_COUNTERCLOCKWISE_BUTTON = {img:ID_ROTATE_COUNTERCLOCKWISE,x:-1,y:-1,w:-1,h:-1,cb:rotateCounterClockwise
 }
-var WRITER_BUILD_BUTTON = {img:ID_WRITER,x:-1,y:-1,w:-1,h:-1,submenu_buttons:[DEF_WRITERRIGHT_R,DEF_WRITERRIGHT_B,DEF_WRITERRIGHT_G,DEF_WRITERRIGHT_Y,DEF_WRITERRIGHT_P,DEF_WRITERRIGHT_PI,DEF_WRITERRIGHT_BL,DEF_WRITERRIGHT_GR],lastselected:undefined}
 
 
 var PLAY_BUTTON = {img:ID_PLAY,x:-1,y:-1,w:-1,h:-1,cb:runGameSimulation
@@ -220,11 +218,6 @@ var MENU = {
 	buttons:[CONVEYOR_BUILD_BUTTON,BRANCH_BUILD_BUTTON,WRITER_BUILD_BUTTON,ROTATE_COUNTERCLOCKWISE_BUTTON,ROTATE_CLOCKWISE_BUTTON,DELETE_BUTTON,PLAY_BUTTON,RESET_BUTTON,HOME_BUTTON]
 }
 
-var TUTORIALMENU={
-	title:"Introduction to Conversion",
-	levels:[]
-}
-
 function saveLevelData() {
 	completedStages[gameStage.name].data=deepCopy(gameGrid)
 	localStorage.setItem("game",JSON.stringify(completedStages))
@@ -233,6 +226,12 @@ function saveLevelData() {
 function goHome() {
 	saveLevelData()
 	MENU.visible=false
+	ITEM_SELECTED=undefined
+	for (var button of MENU.buttons) {
+		if (button.submenu_buttons) {
+			button.lastselected=button.default
+		}
+	}
 	gameState=MAINMENU
 }
 
@@ -438,6 +437,31 @@ var TUTORIAL4 = {
 			return true;
 		}
 	}
+
+var TUTORIALMENU={
+	title:"Introduction to Conversion",
+	levels:[TUTORIAL1,TUTORIAL2,TUTORIAL3,TUTORIAL4],
+	cols:2,
+	width:568*0.8
+}
+var EASYMENU={
+	title:"Beginner Stages",
+	levels:[STAGE1,STAGE2],
+	cols:1,
+	width:568*0.3
+}
+var MEDIUMMENU={
+	title:"Intermediate Stages",
+	levels:[STAGE1,STAGE2],
+	cols:1,
+	width:568*0.3
+}
+var HARDMENU={
+	title:"Advanced Stages",
+	levels:[STAGE1,STAGE2],
+	cols:1,
+	width:568*0.3
+}
 
 var gameGrid = []
 var completedStages = {"Blue Blue":{data:[],complete:false}} //Example completed structure.
@@ -713,8 +737,8 @@ function setupGame() {
 	}catch{}
 	//console.log(completedStages)
 	//loadStage(TUTORIAL4)
-	//gameState=MAINMENU
-	gameState=STARTUP
+	gameState=MAINMENU
+	//gameState=STARTUP
 }
 
 function setupTitleScreen() {
@@ -884,18 +908,17 @@ function loadLevel(level,botx,boty) {
 
 function loadStage(stage) {
 	//gameGrid=deepCopy(stage.level)
+	ITEM_SELECTED=undefined
 	loadLevel(stage.level,stage.start.x,stage.start.y)
 	gameStage=stage
-	ITEM_SELECTED=undefined
 	if (completedStages[stage.name]===undefined) {
 		completedStages[stage.name]={}
 	} else {
 		if (completedStages[stage.name].data!==undefined) {
 			gameGrid = deepCopy(completedStages[stage.name].data)
-			console.log(gameGrid)
+			//console.log(gameGrid)
 		}
 	}
-	
 }
 
 function deepCopy(arr) {
@@ -1070,7 +1093,10 @@ function draw() {
 				SCENE_DRAW(ctx)
 			}break;
 			case MAINMENU:{
-				
+				DisplayMenu(canvas.width/2,8,TUTORIALMENU,ctx)
+				DisplayMenu((canvas.width*0.33)*0+(canvas.width*0.15)+(canvas.width*0.03),108,EASYMENU,ctx)
+				DisplayMenu((canvas.width*0.33)*1+(canvas.width*0.15)+(canvas.width*0.03),108,MEDIUMMENU,ctx)
+				DisplayMenu((canvas.width*0.33)*2+(canvas.width*0.15)+(canvas.width*0.03),108,HARDMENU,ctx)
 			}break;
 			case STARTUP:{
 				ctx.fillStyle="black"
@@ -1559,6 +1585,49 @@ function RenderIcon(x,y,ctx,icon_definition,dir=0,background=undefined,renderToG
 			}break;
 		}
 	}
+}
+
+function DisplayMenu(x,y,menu,ctx) {
+	ctx.fillStyle="#20424a"
+	var totalRowHeight = Math.floor(menu.levels.length / menu.cols)*24+16+24
+	ctx.fillRect(x-menu.width/2,y,menu.width,totalRowHeight)
+	ctx.font="bold 16px 'Zilla Slab', serif"
+	ctx.fillStyle="white"
+	ctx.textAlign = "center"
+	ctx.fillText(menu.title,x,y+16)
+	ctx.beginPath()
+	ctx.lineWidth = 1;
+	ctx.strokeStyle="gray"
+	ctx.moveTo(x-menu.width/2+4,y+18)
+	ctx.lineTo(x+menu.width/2-4,y+18)
+	ctx.stroke()
+	ctx.font="16px 'Zilla Slab', serif"
+	ctx.fillStyle="white"
+	ctx.textAlign = "center"
+	for (var i=0;i<menu.levels.length;i++) {
+		var col = i % menu.cols
+		var row = Math.floor(i / menu.cols)
+		var colWidth = menu.width/menu.cols
+		var levelBoxBounds = {x:x+col*colWidth-((menu.cols!==1)?colWidth:colWidth/2),y:y+24+24*row,w:colWidth,h:16}
+		if (MouseOverBounds(levelBoxBounds)) {
+			if (MOUSEDOWN) {
+				MOUSEDOWN=false
+				loadStage(menu.levels[i])
+				gameState=WAITING
+			}
+			ctx.fillStyle="rgb(132, 186, 133)"
+			ctx.fillRect(levelBoxBounds.x,levelBoxBounds.y,levelBoxBounds.w,levelBoxBounds.h)
+		}
+		ctx.fillStyle="white"
+		ctx.fillText(menu.levels[i].name,x+col*colWidth-((menu.cols!==1)?colWidth/2:0),y+16+24+24*row)
+	}
+}
+
+function MouseOverBounds(bounds) {
+	return (LAST_MOUSE_X>=bounds.x&&
+	LAST_MOUSE_X<=bounds.x+bounds.w&&
+	LAST_MOUSE_Y>=bounds.y&&
+	LAST_MOUSE_Y<=bounds.y+bounds.h)
 }
 
 function GetArrowImage(col) {
