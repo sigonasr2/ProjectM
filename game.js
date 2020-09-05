@@ -950,7 +950,7 @@ function clickEvent(e) {
 		setMoveMode(true)
 	}
 	
-	if (gridModeIsAvailable()&&e.button!==0) {
+	if (!MOBILE&&gridModeIsAvailable()&&e.button!==0) {
 		setMoveMode(true)
 		e.preventDefault()
 	}
@@ -1028,7 +1028,7 @@ function releaseEvent(e) {
 	if (gridModeIsAvailable()&&ITEM_SELECTED===undefined) {
 		setMoveMode(false)
 	}
-	if (gridModeIsAvailable()&&e.button!==0) {
+	if (!MOBILE&&gridModeIsAvailable()&&e.button!==0) {
 		setMoveMode(false)
 		e.preventDefault()
 	}
