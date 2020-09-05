@@ -128,6 +128,9 @@ var LAST_MOUSE_Y=0;
 var DRAG_X = -1
 var DRAG_Y = -1
 var BOT_DID_NOT_REACH_EXIT = false
+var TOOLTIPDISPLAYED = undefined
+var MOVEMODE = false
+var STARTDRAG = undefined
 
 var MESSAGETIMER = -1
 var EXPECTED = true //True means the bot was supposed to accepted, false means the bot was supposed to be rejected.
@@ -218,10 +221,16 @@ var DELETE_BUTTON = {img:ID_DELETE,x:-1,y:-1,w:-1,h:-1,cb:toggleDeleteMode,toolt
 }
 var HOME_BUTTON = {img:ID_HOME,x:-1,y:-1,w:-1,h:-1,cb:goHome,tooltip:"Go back to the level selection menu."
 }
+var MOVE_BUTTON = {img:ID_MOVE_BUTTON,x:2,y:2,w:32,h:32,cb:toggleMoveMode,tooltip:"Scroll the view area."
+}
 
 var MENU = {
 	visible:false,
 	buttons:[CONVEYOR_BUILD_BUTTON,BRANCH_BUILD_BUTTON,WRITER_BUILD_BUTTON,ROTATE_COUNTERCLOCKWISE_BUTTON,ROTATE_CLOCKWISE_BUTTON,DELETE_BUTTON,PLAY_BUTTON,RESET_BUTTON,HOME_BUTTON]
+}
+
+function toggleMoveMode() {
+	setMoveMode(!MOVEMODE)
 }
 
 function saveLevelData() {
@@ -233,12 +242,16 @@ function goHome() {
 	saveLevelData()
 	MENU.visible=false
 	BRIDGEDBELT=false
+	setMoveMode(false)
+	GRID_X=20
+	GRID_Y=20
 	ITEM_SELECTED=undefined
 	for (var button of MENU.buttons) {
 		if (button.submenu_buttons) {
 			button.lastselected=button.default
 		}
 	}
+	gameGrid=[]
 	gameState=MAINMENU
 }
 
@@ -406,6 +419,27 @@ var STAGE2 = {
 			return true;
 		}
 	}
+var STAGE3 = {
+	name:"Balance",
+	objective:"Accept bots with the same number of red and blue.",
+	level:createGrid(15,15,14,7),
+	start:{x:0,y:7},
+	accept:(tape)=>{
+			var reds=0;
+			var blues=0;
+			for (var i=0;i<tape.length;i++) {
+				switch (tape[i]) {
+					case RED:{
+						reds++;
+					}break;
+					case BLUE:{
+						blues++;
+					}break;
+				}
+			}
+			return blues===reds;
+		}
+	}
 var TUTORIAL1 = {
 	name:"Conveyors!",
 	objective:"To convert your robots, you must send them from the entrance to the exit. Select a belt and send robots to where they truly belong.",
@@ -470,7 +504,7 @@ var EASYMENU={
 }
 var MEDIUMMENU={
 	title:"Intermediate Stages",
-	levels:[STAGE1,STAGE2],
+	levels:[STAGE3,STAGE2],
 	cols:1,
 	width:568*0.33
 }
@@ -819,6 +853,19 @@ function mouseOverButton(canvas,e,button) {
 			getMousePos(e).y<=button.y+button.h)
 }
 
+function setMoveMode(mode) {
+	MOVEMODE=mode
+	if (MOVEMODE) {
+		document.body.style.cursor="move"
+	} else {
+		if (DELETEMODE) {
+			document.body.style.cursor="url('delete_cursor.png') 8 8,auto"
+		} else {
+			document.body.style.cursor="url('cursor.png') 8 8,auto"
+		}
+	}
+}
+
 function clickEvent(e) {
 	//console.log(MENU.buttons)
 	if (e instanceof TouchEvent) {
@@ -830,6 +877,7 @@ function clickEvent(e) {
 	var mousepos = getMousePos(e)
 	LAST_MOUSE_X=mousepos.x
 	LAST_MOUSE_Y=mousepos.y
+	MOUSEOVERTIME=-1
 	
 	MOUSEDOWN=true
 	
@@ -876,17 +924,39 @@ function clickEvent(e) {
 								index++;
 							}
 						}
-						ITEM_SELECTED=button.lastselected
+						if (ITEM_SELECTED===button.lastselected&&!MOVEMODE) {
+							if (!MOBILE) {
+								ITEM_SELECTED=undefined
+							}
+						} else {
+							ITEM_SELECTED=button.lastselected
+						}
 						//console.log(button)
+						setMoveMode(false)
 						return
 					}
 				}
 			}
 		}
+		
+		if (mouseOverButton(canvas,e,MOVE_BUTTON)&&!DELETEMODE) {
+			MOVE_BUTTON.cb()
+			return
+		}
+	}
+	
+	if (gridModeIsAvailable()&&ITEM_SELECTED===undefined) {
+		setMoveMode(true)
+	}
+	
+	if (MOVEMODE) {
+		//Cannot handle building until out of move mode.
+		STARTDRAG=getMousePos(e)
+		return;
 	}
 	
 	//console.log(getGridCoords(getMousePos(e)))
-	if (ITEM_SELECTED!==undefined||DELETEMODE) {
+	if ((ITEM_SELECTED!==undefined||DELETEMODE)&&!MOVEMODE) {
 		var clickCoords = getGridCoords(getMousePos(e))
 		if (coordsInBounds(clickCoords)) {
 			modifyBoard(clickCoords,ITEM_SELECTED)
@@ -944,6 +1014,15 @@ function releaseEvent(e) {
 	if (e instanceof TouchEvent) {
 		e.preventDefault()
 	}
+	
+	if (gridModeIsAvailable()&&ITEM_SELECTED===undefined) {
+		setMoveMode(false)
+	}
+	
+	if (MOVEMODE) {
+		STARTDRAG=undefined
+	}
+	
 	var mousepos = getMousePos(e)
 	LAST_MOUSE_X=mousepos.x
 	LAST_MOUSE_Y=mousepos.y
@@ -1009,6 +1088,12 @@ function updateMouse(e) {
 	var mousepos = getMousePos(e)
 	LAST_MOUSE_X=mousepos.x
 	LAST_MOUSE_Y=mousepos.y
+	
+	if (MOVEMODE&&STARTDRAG!==undefined) {
+		GRID_X+=mousepos.x-STARTDRAG.x
+		GRID_Y+=mousepos.y-STARTDRAG.y
+		STARTDRAG=mousepos
+	}
 	
 	if (DRAGGING) {
 		var clickCoords = getGridCoords(getMousePos(e))
@@ -1757,10 +1842,12 @@ function DisplayMenu(x,y,menu,ctx) {
 			drawImage(x+col*colWidth+16-((menu.cols!==1)?colWidth:colWidth/2)-8,y+32+24*row,ID_COMPLETE_STAR,ctx,0,0.5)
 		}
 		ctx.fillText(menu.levels[i].name,x+col*colWidth-((menu.cols!==1)?colWidth/2:0)+20-colWidth/2,y+16+24+24*row)
-		ctx.font="12px 'Profont','Courier New', serif"
-		ctx.fillStyle="white"
-		ctx.textAlign = "center"
-		ctx.fillText(completedStages[menu.levels[i].name].score,x+col*colWidth-((menu.cols!==1)?colWidth/2:0)+colWidth/2-16,y+16+24+24*row)
+		if (LevelIsBeat(menu.levels[i].name)) {
+			ctx.font="12px 'Profont','Courier New', serif"
+			ctx.fillStyle="white"
+			ctx.textAlign = "center"
+			ctx.fillText(completedStages[menu.levels[i].name].score,x+col*colWidth-((menu.cols!==1)?colWidth/2:0)+colWidth/2-16,y+16+24+24*row)
+		}
 	}
 }
 
@@ -1914,7 +2001,7 @@ function RenderMenu(ctx) {
 					if (MOUSEOVERTIME===-1) {
 						MOUSEOVERTIME=new Date().getTime()
 					} else 
-					if (new Date().getTime()-MOUSEOVERTIME>=500) {
+					if (MOBILE&&new Date().getTime()-MOUSEOVERTIME>=4000 || !MOBILE&&new Date().getTime()-MOUSEOVERTIME>=1000) {
 						mouseOverButton = button
 					}
 				}
@@ -1932,7 +2019,15 @@ function RenderMenu(ctx) {
 		if (!mousedOver) {
 			MOUSEOVERTIME=-1
 		}
+		
+		if (gridModeIsAvailable()) {
+			AddButton(MOVE_BUTTON.img,MOVE_BUTTON.x,MOVE_BUTTON.y,ctx,MOVE_BUTTON,MOVE_BUTTON.cb)
+		}
 	}
+}
+
+function gridModeIsAvailable() {
+	return (gameGrid.length>5||(gameGrid.length>0&&gameGrid[0].length>5))&&!DELETEMODE
 }
 
 function AddButton(img,x,y,ctx,button,dir=0) {
