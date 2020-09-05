@@ -844,6 +844,17 @@ function clickEvent(e) {
 		for (var button of MENU.buttons) {
 			if (ButtonIsUnlocked(button)) {
 				if (mouseOverButton(canvas,e,button)) {
+					if (MOBILE&&button===CONVEYOR_BUILD_BUTTON) {
+						setTimeout(()=>{
+							if (!MOUSEDOWN&&
+								LAST_MOUSE_X>=CONVEYOR_BUILD_BUTTON.x&&
+								LAST_MOUSE_X<=CONVEYOR_BUILD_BUTTON.x+CONVEYOR_BUILD_BUTTON.w&&
+								LAST_MOUSE_Y>=CONVEYOR_BUILD_BUTTON.y&&
+								LAST_MOUSE_Y<=CONVEYOR_BUILD_BUTTON.y+CONVEYOR_BUILD_BUTTON.h) {
+									BRIDGEDBELT=!BRIDGEDBELT
+								}
+							},500)
+					}
 					if (button.cb!==undefined) {
 						button.cb()
 						return;
