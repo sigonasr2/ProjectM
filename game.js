@@ -262,7 +262,8 @@ function runGameSimulation(){
 		BOT_PREVX=-100
 		BOT_PREVY=-100
 		BOT_TAPE=""
-		BOT_START_TAPE=""
+		BOT_START_TAPE=undefined
+		setMoveMode(false)
 		generateBotQueue()
 		//console.log(BOT_QUEUE)
 		setTimeout(()=>{
@@ -949,6 +950,11 @@ function clickEvent(e) {
 		setMoveMode(true)
 	}
 	
+	if (gridModeIsAvailable()&&e.button!==0) {
+		setMoveMode(true)
+		e.preventDefault()
+	}
+	
 	if (MOVEMODE) {
 		//Cannot handle building until out of move mode.
 		STARTDRAG=getMousePos(e)
@@ -1005,9 +1011,13 @@ function placeObject(coords,def) {
 }
 
 function getGridCoords(pos) {
-	var x = Math.round((pos.x-GRID_X)/GRID_W-1)
-	var y = Math.round((pos.y-GRID_Y)/GRID_H-1)
-	return {x:x,y:y}
+	if (pos.x<canvas.width*0.75&&pos.y<canvas.height*0.8) {
+		var x = Math.round((pos.x-GRID_X)/GRID_W-1)
+		var y = Math.round((pos.y-GRID_Y)/GRID_H-1)
+		return {x:x,y:y}
+	} else {
+		return {x:-1,y:-1}
+	}
 }
 
 function releaseEvent(e) {
@@ -1017,6 +1027,10 @@ function releaseEvent(e) {
 	
 	if (gridModeIsAvailable()&&ITEM_SELECTED===undefined) {
 		setMoveMode(false)
+	}
+	if (gridModeIsAvailable()&&e.button!==0) {
+		setMoveMode(false)
+		e.preventDefault()
 	}
 	
 	if (MOVEMODE) {
@@ -1152,9 +1166,17 @@ function renderGame(ctx) {
 		var movedDiff = {x:BOT_X-BOT_PREVX,y:BOT_Y-BOT_PREVY}
 		movedDiff.x*=Math.min((new Date().getTime()-LASTPOSITIONUPDATE),gameSpeed)/gameSpeed
 		movedDiff.y*=Math.min((new Date().getTime()-LASTPOSITIONUPDATE),gameSpeed)/gameSpeed
+		
+		var interpolatedX = GRID_X+GRID_W*(BOT_PREVX+movedDiff.x)+16+GRID_W/2
+		var interpolatedY = GRID_Y+GRID_H*(BOT_PREVY+movedDiff.y)+16+GRID_H/2
+		
+		if (gridModeIsAvailable()&&gameState===RUNNING&&BOT_START_TAPE!==undefined) {
+			GRID_X=-(interpolatedX-GRID_X)+canvas.width/2-20-GRID_W
+			GRID_Y=-(interpolatedY-GRID_Y)+canvas.height/2-20-GRID_H
+		}
 		drawImage(
-		GRID_X+GRID_W*(BOT_PREVX+movedDiff.x)+16+GRID_W/2,
-		GRID_Y+GRID_H*(BOT_PREVY+movedDiff.y)+16+GRID_H/2,
+		interpolatedX,
+		interpolatedY,
 		ID_BOT,ctx,0*90)
 	}
 }
@@ -1406,7 +1428,7 @@ function RenderGameInfo(ctx) {
 			drawImage(canvas.width-18,14,ID_INCOMPLETE_STAR,ctx,0,0.75)
 		}
 		
-		if (BOT_START_TAPE!==""&&(gameState===REVIEWING||gameState===FINISH)) {
+		if (BOT_START_TAPE!==undefined&&(gameState===REVIEWING||gameState===FINISH)) {
 			ctx.fillStyle="#20424a"
 			ctx.globalAlpha=0.6
 			ctx.fillRect(canvas.width*0.75-canvas.width*0.25,4,canvas.width*0.25,5*12+56)
@@ -1427,7 +1449,7 @@ function RenderGameInfo(ctx) {
 			ctx.fillText(TESTSTEPS,canvas.width*0.75-8,4+5*12+36+16)
 			
 		}
-		if (BOT_START_TAPE!=="") {
+		if (BOT_START_TAPE!==undefined) {
 			RenderTape(canvas.width*0.75+8,16,canvas.width*0.25-16,ctx,BOT_TAPE)
 		}
 		
@@ -1505,7 +1527,7 @@ function RenderGameInfo(ctx) {
 		if (MOBILE&&gameState!==RUNNING) {
 			drawImage(canvas.width*0.75-48,canvas.height*0.8-48,
 			ID_OUTLINE,ctx,0)
-			if (ITEM_SELECTED) {
+			if (ITEM_SELECTED&&!MOVEMODE) {
 				if (ITEM_SELECTED.img===ID_CONVEYOR) {
 					RenderIcon(canvas.width*0.75-48-32,canvas.height*0.8-48-32,ctx,ITEM_SELECTED,ITEM_DIRECTION,undefined,undefined,2)
 				} else {
