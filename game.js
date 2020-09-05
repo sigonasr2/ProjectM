@@ -1280,16 +1280,21 @@ function RenderGameInfo(ctx) {
 		
 		RenderSpeedbar(canvas.width*0.75+(canvas.width*0.25)/2-32,8,64,ctx)
 		
+		
 		if (LevelIsBeat(gameStage.name)) {
 			drawImage(canvas.width-18,14,ID_COMPLETE_STAR,ctx,0,0.75)
+			ctx.font="11px 'Profont','Courier New', serif"
+			ctx.fillStyle="white"
+			ctx.textAlign = "center"
+			ctx.fillText("Best Score: "+completedStages[gameStage.name].score,canvas.width*0.75+(canvas.width*0.25)/3+2,22)
 		} else {
 			drawImage(canvas.width-18,14,ID_INCOMPLETE_STAR,ctx,0,0.75)
 		}
 		
-		if (gameState===REVIEWING||gameState===FINISH) {
+		if (BOT_START_TAPE!==""&&(gameState===REVIEWING||gameState===FINISH)) {
 			ctx.fillStyle="#20424a"
 			ctx.globalAlpha=0.6
-			ctx.fillRect(canvas.width*0.75-canvas.width*0.25,4,canvas.width*0.25,5*12+28)
+			ctx.fillRect(canvas.width*0.75-canvas.width*0.25,4,canvas.width*0.25,5*12+56)
 			ctx.globalAlpha=1
 			
 			ctx.font="bold 16px 'Zilla Slab', serif"
@@ -1299,6 +1304,13 @@ function RenderGameInfo(ctx) {
 			ctx.fillStyle="black"
 			ctx.fillText("Original Tape",canvas.width*0.75-canvas.width*0.25,20)
 			RenderTape(canvas.width*0.75-canvas.width*0.25+8,16,canvas.width*0.25-16,ctx,BOT_START_TAPE)
+			ctx.font="12px 'Profont','Courier New', serif"
+			ctx.fillStyle="white"
+			ctx.textAlign = "left"
+			ctx.fillText("Efficiency Score:",canvas.width*0.75-(canvas.width*0.25)+4,4+5*12+36)
+			ctx.textAlign = "right"
+			ctx.fillText(TESTSTEPS,canvas.width*0.75-8,4+5*12+36+16)
+			
 		}
 		if (BOT_START_TAPE!=="") {
 			RenderTape(canvas.width*0.75+8,16,canvas.width*0.25-16,ctx,BOT_TAPE)
