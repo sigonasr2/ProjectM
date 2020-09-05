@@ -137,6 +137,8 @@ var BOT_PREVX = BOT_X
 var BOT_PREVY = BOT_Y
 var LASTPOSITIONUPDATE = 0
 
+var BRIDGEDBELT = false
+
 var MOBILE = false
 
 var BELTDOWN = {type:"BELT",direction:DOWN/*,direction2 - defines a secondary direction. For two belts at once.*/}
@@ -194,6 +196,7 @@ var KEY_ROTATION_RIGHT = ["D","L","d","l","6","ArrowRight"]
 var KEY_ROTATION_LEFT = ["A","G","a","h","4","ArrowLeft"]
 var KEY_ROTATION_UP = ["W","K","w","k","8","ArrowUp"]
 var KEY_ROTATION_DOWN = ["S","J","s","j","2","ArrowDown"]
+var KEY_BRIDGED_BELT = ["Shift"]
 
 var CONVEYOR_BUILD_BUTTON = {img:ID_CONVEYOR,x:-1,y:-1,w:-1,h:-1,lastselected:DEF_CONVEYOR}
 var BRANCH_BUILD_BUTTON = {img:ID_BRANCH,x:-1,y:-1,w:-1,h:-1,submenu_buttons:[DEF_BRANCHUP_RB,DEF_BRANCHUP_BR,DEF_BRANCHUP_GY,DEF_BRANCHUP_YG,DEF_BRANCHUP_PPI,DEF_BRANCHUP_PIP,DEF_BRANCHUP_BLGR,DEF_BRANCHUP_GRBL],lastselected:undefined,default:DEF_BRANCHUP_RB}
@@ -228,6 +231,7 @@ function saveLevelData() {
 function goHome() {
 	saveLevelData()
 	MENU.visible=false
+	BRIDGEDBELT=false
 	ITEM_SELECTED=undefined
 	for (var button of MENU.buttons) {
 		if (button.submenu_buttons) {
@@ -664,28 +668,28 @@ function runBot(testing) {
 			case UP:{
 				nextSquare = setNextSquare(0,-1)
 				if (nextSquare!==undefined) {
-					BOT_DIR=(nextSquare.direction2 &&
+					BOT_DIR=(nextSquare.direction2!==undefined &&
 						(nextSquare.direction2===UP||nextSquare.direction2===DOWN))?nextSquare.direction2:nextSquare.direction
 				}
 			}break;
 			case LEFT:{
 				nextSquare = setNextSquare(-1,0)
 				if (nextSquare!==undefined) {
-					BOT_DIR=(nextSquare.direction2 &&
+					BOT_DIR=(nextSquare.direction2!==undefined &&
 					(nextSquare.direction2===RIGHT||nextSquare.direction2===LEFT))?nextSquare.direction2:nextSquare.direction
 				}
 			}break;
 			case RIGHT:{
 				nextSquare = setNextSquare(1,0);
 				if (nextSquare!==undefined) {
-					BOT_DIR=(nextSquare.direction2 &&
+					BOT_DIR=(nextSquare.direction2!==undefined &&
 					(nextSquare.direction2===RIGHT||nextSquare.direction2===LEFT))?nextSquare.direction2:nextSquare.direction
 				}
 			}break;
 			case DOWN:{
 				nextSquare = setNextSquare(0,1)
 				if (nextSquare!==undefined) {
-					BOT_DIR=(nextSquare.direction2 &&
+					BOT_DIR=(nextSquare.direction2!==undefined &&
 					(nextSquare.direction2===UP||nextSquare.direction2===DOWN))?nextSquare.direction2:nextSquare.direction
 				}
 			}break;
@@ -755,6 +759,7 @@ function setupGame() {
 	canvas.addEventListener("touchstart",clickEvent)
 	canvas.addEventListener("touchend",releaseEvent)
 	document.addEventListener("keydown",keydownEvent)
+	document.addEventListener("keyup",keyupEvent)
 	try {
 		completedStages = JSON.parse(localStorage.getItem("game"))
 		if (!completedStages) {
@@ -794,6 +799,15 @@ function keydownEvent(e) {
 	}
 	if (CheckKeys(e,KEY_ROTATION_DOWN)) {
 		ITEM_DIRECTION=DOWN
+	}
+	if (CheckKeys(e,KEY_BRIDGED_BELT)) {
+		BRIDGEDBELT=true
+	}
+}
+
+function keyupEvent(e) {
+	if (CheckKeys(e,KEY_BRIDGED_BELT)) {
+		BRIDGEDBELT=false
 	}
 }
 
@@ -897,8 +911,13 @@ function deleteObject(coords,def) {
 }
 function placeObject(coords,def) {
 	if (notAForbiddenObject(coords)) {
-		var newObj={...def,direction:ITEM_DIRECTION}
-		gameGrid[coords.y][coords.x]=newObj
+		if (gameGrid[coords.y][coords.x].direction!==undefined&&gameGrid[coords.y][coords.x].type&&gameGrid[coords.y][coords.x].type==="BELT"&&BRIDGEDBELT) {
+			gameGrid[coords.y][coords.x]={...gameGrid[coords.y][coords.x],direction2:ITEM_DIRECTION}
+			console.log(gameGrid)
+		} else {
+			var newObj={...def,direction:ITEM_DIRECTION}
+			gameGrid[coords.y][coords.x]=newObj
+		}
 		gameState=WAITING
 		endARound()
 	}
@@ -1476,10 +1495,16 @@ function createHorizontalGradient(x,y,right,ctx,scale) {
 	return gradient
 }
 
-function DrawSingleConveyor(x,y,dir,ctx,scale) {
+function DrawSingleConveyor(x,y,dir,ctx,scale,ghost=false) {
 	ctx.lineWidth = 16*scale;
 	ctx.lineCap = "square"
-	ctx.strokeStyle="rgb(124,162,157)"
+	if (ghost) {
+		ctx.globalAlpha=0.6
+		ctx.strokeStyle="rgb(0,255,0)"
+	} else {
+		ctx.globalAlpha=1
+		ctx.strokeStyle="rgb(124,162,157)"
+	}
 	ctx.setLineDash([])
 	if (dir===LEFT||dir===RIGHT) {
 		ctx.beginPath()
@@ -1509,6 +1534,7 @@ function DrawSingleConveyor(x,y,dir,ctx,scale) {
 		ctx.lineTo(x+16*scale,y+30*scale)
 		ctx.stroke()
 	}
+	ctx.globalAlpha=1
 }
 
 function GetOppositeDirection(dir) {
@@ -1605,9 +1631,12 @@ function DrawConnectedConveyor(x,y,ctx,connections,dir,scale,pass=0) {
 
 function HasRelativeConnection(x,y,dir) {
 	return (gameGrid[y][x].direction===dir ||
+		(gameGrid[y][x].direction2!==undefined&&gameGrid[y][x].direction2===dir) ||
 		(
 			gameGrid[y][x].type==="BRANCH" &&
-			(gameGrid[y][x].direction===getClockwiseDirection(dir) || gameGrid[y][x].direction===getCounterClockwiseDirection(dir))
+			(gameGrid[y][x].direction===getClockwiseDirection(dir) || gameGrid[y][x].direction===getCounterClockwiseDirection(dir) ||
+			(gameGrid[y][x].direction2!==undefined&&gameGrid[y][x].direction2===getClockwiseDirection(dir)) ||
+			(gameGrid[y][x].direction2!==undefined&&gameGrid[y][x].direction2===getCounterClockwiseDirection(dir)))
 		) ||
 		(
 			x===gameStage.start.x&&y===gameStage.start.y
@@ -1617,8 +1646,19 @@ function HasRelativeConnection(x,y,dir) {
 
 function RenderConveyor(x,y,ctx,icon_definition,dir=0,background=undefined,grid=undefined,scale) {
 	if (grid===undefined) {
+		//This is the button version.
+		if (BRIDGEDBELT) {
+			DrawSingleConveyor(x,y,dir+1,ctx,scale,true)
+			DrawSingleConveyor(x,y,dir,ctx,scale)
+		} else {
+			DrawSingleConveyor(x,y,dir,ctx,scale)
+		}
+	} else 
+	if (gameGrid[grid.y][grid.x].direction2!==undefined) {
 		DrawSingleConveyor(x,y,dir,ctx,scale)
-	} else {
+		DrawSingleConveyor(x,y,gameGrid[grid.y][grid.x].direction2,ctx,scale)
+	} else
+	{
 		var connections = {}
 		if (grid.x>0) {if (HasRelativeConnection(grid.x-1,grid.y+0,RIGHT)){connections[LEFT]=true}}
 		if (grid.x<gameGrid[grid.y].length-1) {if (HasRelativeConnection(grid.x+1,grid.y+0,LEFT)){connections[RIGHT]=true}}
