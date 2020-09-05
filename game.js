@@ -93,6 +93,7 @@ const TITLE = 7;
 const STARTUP = 8;
 
 var ISTESTING = false;
+var MOUSEOVERTIME = -1
 
 const UP = 0;
 const RIGHT = 1;
@@ -198,24 +199,24 @@ var KEY_ROTATION_UP = ["W","K","w","k","8","ArrowUp"]
 var KEY_ROTATION_DOWN = ["S","J","s","j","2","ArrowDown"]
 var KEY_BRIDGED_BELT = ["Shift"]
 
-var CONVEYOR_BUILD_BUTTON = {img:ID_CONVEYOR,x:-1,y:-1,w:-1,h:-1,lastselected:DEF_CONVEYOR}
-var BRANCH_BUILD_BUTTON = {img:ID_BRANCH,x:-1,y:-1,w:-1,h:-1,submenu_buttons:[DEF_BRANCHUP_RB,DEF_BRANCHUP_BR,DEF_BRANCHUP_GY,DEF_BRANCHUP_YG,DEF_BRANCHUP_PPI,DEF_BRANCHUP_PIP,DEF_BRANCHUP_BLGR,DEF_BRANCHUP_GRBL],lastselected:undefined,default:DEF_BRANCHUP_RB}
-var WRITER_BUILD_BUTTON = {img:ID_WRITER,x:-1,y:-1,w:-1,h:-1,submenu_buttons:[DEF_WRITERRIGHT_R,DEF_WRITERRIGHT_B,DEF_WRITERRIGHT_G,DEF_WRITERRIGHT_Y,DEF_WRITERRIGHT_P,DEF_WRITERRIGHT_PI,DEF_WRITERRIGHT_BL,DEF_WRITERRIGHT_GR],lastselected:undefined,default:DEF_WRITERRIGHT_R}
-var ROTATE_CLOCKWISE_BUTTON = {img:ID_ROTATE_CLOCKWISE,x:-1,y:-1,w:-1,h:-1,cb:rotateClockwise
+var CONVEYOR_BUILD_BUTTON = {img:ID_CONVEYOR,x:-1,y:-1,w:-1,h:-1,lastselected:DEF_CONVEYOR,tooltip:"Conveyor Belt\nMoves bots in a direction.\n\nHold (Shift) to bridge over other belts",mobileTooltip:"Conveyor Belt\nMoves bots in a direction.\n\nHold button down to toggle bridge mode. Used to bridge over other belts"}
+var BRANCH_BUILD_BUTTON = {img:ID_BRANCH,x:-1,y:-1,w:-1,h:-1,submenu_buttons:[DEF_BRANCHUP_RB,DEF_BRANCHUP_BR,DEF_BRANCHUP_GY,DEF_BRANCHUP_YG,DEF_BRANCHUP_PPI,DEF_BRANCHUP_PIP,DEF_BRANCHUP_BLGR,DEF_BRANCHUP_GRBL],lastselected:undefined,default:DEF_BRANCHUP_RB,tooltip:"Branch\nReads next tape and moves bot in the\nmatching color direction.\n\nMoves bot forward and does not consume\ntape if no match found."}
+var WRITER_BUILD_BUTTON = {img:ID_WRITER,x:-1,y:-1,w:-1,h:-1,submenu_buttons:[DEF_WRITERRIGHT_R,DEF_WRITERRIGHT_B,DEF_WRITERRIGHT_G,DEF_WRITERRIGHT_Y,DEF_WRITERRIGHT_P,DEF_WRITERRIGHT_PI,DEF_WRITERRIGHT_BL,DEF_WRITERRIGHT_GR],lastselected:undefined,default:DEF_WRITERRIGHT_R,tooltip:"Writer\nWrites a color to the end of the tape."}
+var ROTATE_CLOCKWISE_BUTTON = {img:ID_ROTATE_CLOCKWISE,x:-1,y:-1,w:-1,h:-1,cb:rotateClockwise,tooltip:"Rotate selection clockwise."
 }
-var ROTATE_COUNTERCLOCKWISE_BUTTON = {img:ID_ROTATE_COUNTERCLOCKWISE,x:-1,y:-1,w:-1,h:-1,cb:rotateCounterClockwise
+var ROTATE_COUNTERCLOCKWISE_BUTTON = {img:ID_ROTATE_COUNTERCLOCKWISE,x:-1,y:-1,w:-1,h:-1,cb:rotateCounterClockwise,tooltip:"Rotate selection counter-clockwise."
 }
 
 
-var PLAY_BUTTON = {img:ID_PLAY,x:-1,y:-1,w:-1,h:-1,cb:runGameSimulation
+var PLAY_BUTTON = {img:ID_PLAY,x:-1,y:-1,w:-1,h:-1,cb:runGameSimulation,tooltip:"Test your great machine.\n\nConvert all the bots!"
 }
-var PAUSE_BUTTON = {img:ID_PAUSE,x:-1,y:-1,w:-1,h:-1,cb:pauseGameSimulation
+var PAUSE_BUTTON = {img:ID_PAUSE,x:-1,y:-1,w:-1,h:-1,cb:pauseGameSimulation,tooltip:"Pause the great machine."
 }
-var RESET_BUTTON = {img:ID_RESET,x:-1,y:-1,w:-1,h:-1,cb:resetSimulation
+var RESET_BUTTON = {img:ID_RESET,x:-1,y:-1,w:-1,h:-1,cb:resetSimulation,tooltip:"Reset the great machine."
 }
-var DELETE_BUTTON = {img:ID_DELETE,x:-1,y:-1,w:-1,h:-1,cb:toggleDeleteMode
+var DELETE_BUTTON = {img:ID_DELETE,x:-1,y:-1,w:-1,h:-1,cb:toggleDeleteMode,tooltip:"Remove a piece on the field."
 }
-var HOME_BUTTON = {img:ID_HOME,x:-1,y:-1,w:-1,h:-1,cb:goHome
+var HOME_BUTTON = {img:ID_HOME,x:-1,y:-1,w:-1,h:-1,cb:goHome,tooltip:"Go back to the level selection menu."
 }
 
 var MENU = {
@@ -830,6 +831,8 @@ function clickEvent(e) {
 	LAST_MOUSE_X=mousepos.x
 	LAST_MOUSE_Y=mousepos.y
 	
+	MOUSEDOWN=true
+	
 	if (gameState===STARTUP) {
 		currentSound.play()
 		setupTitleScreen()
@@ -846,7 +849,7 @@ function clickEvent(e) {
 				if (mouseOverButton(canvas,e,button)) {
 					if (MOBILE&&button===CONVEYOR_BUILD_BUTTON) {
 						setTimeout(()=>{
-							if (!MOUSEDOWN&&
+							if (MOUSEDOWN&&
 								LAST_MOUSE_X>=CONVEYOR_BUILD_BUTTON.x&&
 								LAST_MOUSE_X<=CONVEYOR_BUILD_BUTTON.x+CONVEYOR_BUILD_BUTTON.w&&
 								LAST_MOUSE_Y>=CONVEYOR_BUILD_BUTTON.y&&
@@ -893,8 +896,6 @@ function clickEvent(e) {
 			//console.log(gameGrid)
 		}
 	}
-	
-	MOUSEDOWN=true
 }
 
 function coordsInBounds(coords) {
@@ -924,7 +925,6 @@ function placeObject(coords,def) {
 	if (notAForbiddenObject(coords)) {
 		if (gameGrid[coords.y][coords.x].direction!==undefined&&gameGrid[coords.y][coords.x].type&&gameGrid[coords.y][coords.x].type==="BELT"&&BRIDGEDBELT) {
 			gameGrid[coords.y][coords.x]={...gameGrid[coords.y][coords.x],direction2:ITEM_DIRECTION}
-			console.log(gameGrid)
 		} else {
 			var newObj={...def,direction:ITEM_DIRECTION}
 			gameGrid[coords.y][coords.x]=newObj
@@ -959,7 +959,7 @@ function releaseEvent(e) {
 		SUBMENU.visible=false
 	}
 	DRAGGING = false
-	MOUSEDOWN=false
+	MOUSEDOWN = false
 }
 
 function loadLevel(level,botx,boty) {
@@ -1858,25 +1858,79 @@ function ButtonIsUnlocked(button) {
 	return gameStage.locked===undefined||(!gameStage.locked.includes(button))
 }
 
+function isMouseOverButton(button) {
+	return LAST_MOUSE_X>=button.x&&
+		LAST_MOUSE_X<=button.x+button.w&&
+		LAST_MOUSE_Y>=button.y&&
+		LAST_MOUSE_Y<=button.y+button.h
+}
+
+function DisplayTooltip(button,ctx) {
+	//240x(20*lines) (16pt font)
+	var tooltipSplit=button.tooltip.split("\n")
+	var tooltipBounds = {
+		x:Math.min(Math.max(LAST_MOUSE_X-120,0),canvas.width*0.75-240),
+		y:LAST_MOUSE_Y-tooltipSplit.length*20-4,
+		w:240,
+		h:tooltipSplit.length*16+8
+	}
+	ctx.globalAlpha=0.9
+	ctx.fillStyle="#20424a"
+	ctx.fillRect(tooltipBounds.x,tooltipBounds.y,tooltipBounds.w,tooltipBounds.h)
+	ctx.strokeStyle="white"
+	ctx.lineWidth=1
+	ctx.setLineDash([])
+	ctx.strokeRect(tooltipBounds.x,tooltipBounds.y,tooltipBounds.w,tooltipBounds.h)
+	ctx.fillStyle="white"
+	ctx.textAlign = "left"
+	for (var i=0;i<tooltipSplit.length;i++) {
+		if (i===0) {
+			ctx.font="bold 12px 'Zilla Slab', serif"
+		} else {
+			ctx.font="12px 'Zilla Slab', serif"
+		}
+		ctx.fillText(tooltipSplit[i],tooltipBounds.x+8,tooltipBounds.y+i*16+16)
+	}
+	ctx.globalAlpha=1
+}
+
 function RenderMenu(ctx) {
 	if (MENU.visible) {
 		ctx.fillStyle="#20424a"
 		ctx.fillRect(0,canvas.height*0.8,canvas.width,canvas.height*0.2)
 		var buttonX = 16
 		var buttonY = canvas.height*0.8+16
+		var mouseOverButton = undefined
+		var mousedOver = false
+		
 		for (var button of MENU.buttons) {
+			button.x=buttonX
+			button.y=buttonY
+			button.w=32
+			button.h=32
 			if (ButtonIsUnlocked(button)) {
+				if (mouseOverButton===undefined&&isMouseOverButton(button)) {
+					mousedOver=true
+					if (MOUSEOVERTIME===-1) {
+						MOUSEOVERTIME=new Date().getTime()
+					} else 
+					if (new Date().getTime()-MOUSEOVERTIME>=500) {
+						mouseOverButton = button
+					}
+				}
 				if (button.lastselected) {
 					RenderIcon(buttonX,buttonY,ctx,button.lastselected,(button.cb===undefined)?ITEM_DIRECTION:0,"#b5b5b5")
 				} else {
 					AddButton(button.img,buttonX,buttonY,ctx,button,(button.cb===undefined)?ITEM_DIRECTION:0)
 				}
 			}
-			button.x=buttonX
-			button.y=buttonY
-			button.w=32
-			button.h=32
 			buttonX+=47
+		}
+		if (mouseOverButton!==undefined) {
+			DisplayTooltip(mouseOverButton,ctx)
+		}
+		if (!mousedOver) {
+			MOUSEOVERTIME=-1
 		}
 	}
 }
