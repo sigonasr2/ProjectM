@@ -117,6 +117,7 @@ var BOT_Y = -1
 var BOT_DIR = RIGHT
 var BOT_STATE = ALIVE
 var BOT_TAPE = "RB"
+var BOT_START_TAPE = BOT_TAPE
 var BOT_QUEUE = []
 var DELETEMODE = false
 var DRAGGING = false
@@ -125,6 +126,7 @@ var LAST_MOUSE_X=0;
 var LAST_MOUSE_Y=0;
 var DRAG_X = -1
 var DRAG_Y = -1
+var BOT_DID_NOT_REACH_EXIT = false
 
 var MESSAGETIMER = -1
 var EXPECTED = true //True means the bot was supposed to accepted, false means the bot was supposed to be rejected.
@@ -249,7 +251,12 @@ function runGameSimulation(){
 				BOT_TAPE=BOT_QUEUE[0]
 			} else {
 				BOT_TAPE=ConvertNumberToTape(Math.floor(Math.random()*1000))
+				if (Math.random()<0.5) {
+					BOT_TAPE=BOT_TAPE.split("").reverse().join("")
+				}
+				EXPECTED=gameStage.accept(BOT_TAPE)
 			}
+			BOT_START_TAPE=BOT_TAPE
 			BOT_X=gameStage.start.x
 			BOT_Y=gameStage.start.y
 			BOT_PREVX=BOT_X
@@ -425,7 +432,7 @@ var TUTORIAL3 = {
 	start:{x:0,y:2},
 	tutorial:true,
 	accept:(tape)=>{
-			return true;
+			return tape+BLUE+BLUE+BLUE
 		}
 	}
 var TUTORIAL4 = {
@@ -434,7 +441,11 @@ var TUTORIAL4 = {
 	level:createGrid(5,5,4,2),
 	start:{x:0,y:2},
 	accept:(tape)=>{
-			return true;
+			var newTape = ""
+			for (var i=0;i<tape.length;i++) {
+				newTape+=YELLOW
+			}
+			return newTape
 		}
 	}
 
@@ -515,10 +526,47 @@ function resetGame() {
 	completedStages={}
 }
 
+function decideIfWrongBot(wrongBot,isSupposedToBeAccepted,tape) {
+	var result;
+	switch (typeof(isSupposedToBeAccepted)) {
+		case "string":{
+			if (getSimulatedBotResult(tape)) {
+				result = BOT_TAPE
+				if (result===isSupposedToBeAccepted) {
+					wrongBot=false;
+				} else {
+					wrongBot=true;
+				}
+			} else {
+				if (BOT_QUEUE.length===0) {
+					BOT_DID_NOT_REACH_EXIT=true
+				}
+				wrongBot=true;
+			}
+		}break;
+		case "boolean":{
+			result = getSimulatedBotResult(tape)
+			if (result===isSupposedToBeAccepted) {
+				wrongBot=false;
+			} else {
+				wrongBot=true;
+			}
+		}break;
+	}
+	if (wrongBot) {
+		if (BOT_QUEUE.length===0) {
+			EXPECTED = isSupposedToBeAccepted;
+		}
+		RESULT=false
+		BOT_QUEUE.push(tape)
+	}
+}
+
 function generateBotQueue() {
 	BOT_QUEUE=[]
 	RESULT=true
 	TESTSTEPS=0
+	BOT_DID_NOT_REACH_EXIT=false
 	if (gameState===TESTING) {
 		//Iterate up to...15 RED/BLUE combinations.
 		var MAX_VALUE=1000
@@ -528,36 +576,12 @@ function generateBotQueue() {
 			//console.log(tape)
 			var wrongBot=false //Set to true if a bot that's supposed to pass fails, or a bot that's supposed to fail passes.
 			var isSupposedToBeAccepted=gameStage.accept(tape)
-			var result=getSimulatedBotResult(tape)
-			if (result===isSupposedToBeAccepted) {
-				wrongBot=false;
-			} else {
-				wrongBot=true;
-			}
-			if (wrongBot) {
-				if (BOT_QUEUE.length===0) {
-					EXPECTED = isSupposedToBeAccepted;
-				}
-				RESULT=false
-				BOT_QUEUE.push(tape)
-			}
+			decideIfWrongBot(wrongBot,isSupposedToBeAccepted,tape)
 			var reversedTape=tape.split("").reverse().join("")
 			//console.log(tape)
 			var wrongBot=false //Set to true if a bot that's supposed to pass fails, or a bot that's supposed to fail passes.
 			var isSupposedToBeAccepted=gameStage.accept(reversedTape)
-			var result=getSimulatedBotResult(reversedTape)
-			if (result===isSupposedToBeAccepted) {
-				wrongBot=false;
-			} else {
-				wrongBot=true;
-			}
-			if (wrongBot) {
-				if (BOT_QUEUE.length===0) {
-					EXPECTED = isSupposedToBeAccepted;
-				}
-				RESULT=false
-				BOT_QUEUE.push(reversedTape)
-			}
+			decideIfWrongBot(wrongBot,isSupposedToBeAccepted,reversedTape)
 			if (BOT_QUEUE.length>=3) {
 				break;
 			}
@@ -1260,20 +1284,56 @@ function RenderGameInfo(ctx) {
 			drawImage(canvas.width-18,14,ID_INCOMPLETE_STAR,ctx,0,0.75)
 		}
 		
-		RenderTape(canvas.width*0.75+8,16,canvas.width*0.25-16,ctx)
+		if (gameState===REVIEWING||gameState===FINISH) {
+			ctx.fillStyle="#20424a"
+			ctx.globalAlpha=0.6
+			ctx.fillRect(canvas.width*0.75-canvas.width*0.25,4,canvas.width*0.25,5*12+28)
+			ctx.globalAlpha=1
+			
+			ctx.font="bold 16px 'Zilla Slab', serif"
+			ctx.textAlign = "left"
+			ctx.strokeStyle="rgb(90, 148, 118)"
+			ctx.strokeText("Original Tape",canvas.width*0.75-canvas.width*0.25,20)
+			ctx.fillStyle="black"
+			ctx.fillText("Original Tape",canvas.width*0.75-canvas.width*0.25,20)
+			RenderTape(canvas.width*0.75-canvas.width*0.25+8,16,canvas.width*0.25-16,ctx,BOT_START_TAPE)
+		}
+		RenderTape(canvas.width*0.75+8,16,canvas.width*0.25-16,ctx,BOT_TAPE)
+		
 		
 		if (gameState===RUNNING||gameState===REVIEWING||gameState===FINISH||gameState===PAUSED) {
 			ctx.font="16px 'Zilla Slab', serif"
 			ctx.fillStyle="white"
 			ctx.textAlign = "center"
-			ctx.fillText("Expected Result: ",canvas.width-canvas.width*0.25/2,canvas.height-120-40)
 			
-			if (EXPECTED) {
-				ctx.fillStyle="rgb(52, 235, 140)"
-				ctx.fillText(" ACCEPT",canvas.width-canvas.width*0.25/2,canvas.height-100-40)
-			} else {
-				ctx.fillStyle="rgb(235, 98, 52)"
-				ctx.fillText(" REJECT",canvas.width-canvas.width*0.25/2,canvas.height-100-40)
+			switch (typeof(EXPECTED)) {
+				case "string":{
+					ctx.fillText("Expected Result: ",canvas.width-canvas.width*0.25/2,canvas.height/2-52)
+					ctx.fillStyle="rgb(52, 235, 140)"
+					RenderTape(canvas.width*0.75+8,canvas.height/2-52,canvas.width*0.25-16,ctx,EXPECTED)
+					if (RESULT) {
+						ctx.fillStyle="rgb(52, 235, 140)"
+						ctx.fillText("PASSED",canvas.width-canvas.width*0.25/2,canvas.height/2+24)
+					} else {
+						if (BOT_DID_NOT_REACH_EXIT) {
+							ctx.fillStyle="rgb(235, 98, 52)"
+							ctx.fillText("DID NOT EXIT",canvas.width-canvas.width*0.25/2,canvas.height/2+24)
+ 						} else {
+							ctx.fillStyle="rgb(235, 98, 52)"
+							ctx.fillText("FAILED",canvas.width-canvas.width*0.25/2,canvas.height/2+24)
+						}
+					}
+				}break;
+				case "boolean":{
+					ctx.fillText("Expected Result: ",canvas.width-canvas.width*0.25/2,canvas.height-120-40)
+					if (EXPECTED) {
+						ctx.fillStyle="rgb(52, 235, 140)"
+						ctx.fillText(" ACCEPT",canvas.width-canvas.width*0.25/2,canvas.height-100-40)
+					} else {
+						ctx.fillStyle="rgb(235, 98, 52)"
+						ctx.fillText(" REJECT",canvas.width-canvas.width*0.25/2,canvas.height-100-40)
+					}
+				}break;
 			}
 		}
 		
@@ -1331,15 +1391,16 @@ function RenderGameInfo(ctx) {
 	}
 }
 
-function RenderTape(x,y,width,ctx) {
+function RenderTape(x,y,width,ctx,tape) {
 	var xOffset=0
 	var yOffset=0
 	var ySpacingMult=1
-	if (BOT_TAPE.length>5*5) {
-		ySpacingMult=(24*5)/(Math.ceil(BOT_TAPE.length/5)*24)
+	var ySpacing=12
+	if (tape.length>5*5) {
+		ySpacingMult=(ySpacing*5)/(Math.ceil(tape.length/5)*ySpacing)
 	}
-	for (var i=0;i<Math.min(BOT_TAPE.length,1024);i++) {
-		switch (BOT_TAPE[i]) {
+	for (var i=0;i<Math.min(tape.length,1024);i++) {
+		switch (tape[i]) {
 			case RED:{
 				drawImage(x+xOffset+16,y+yOffset+16,ID_DOT_R,ctx,0)
 			}break;
@@ -1370,7 +1431,7 @@ function RenderTape(x,y,width,ctx) {
 		xOffset+=24;
 		if (xOffset>width-24) {
 			xOffset=0;
-			yOffset+=24*ySpacingMult;
+			yOffset+=ySpacing*ySpacingMult;
 		}
 	}
 }
