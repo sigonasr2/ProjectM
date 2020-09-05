@@ -202,7 +202,7 @@ var KEY_ROTATION_UP = ["W","K","w","k","8","ArrowUp"]
 var KEY_ROTATION_DOWN = ["S","J","s","j","2","ArrowDown"]
 var KEY_BRIDGED_BELT = ["Shift"]
 
-var CONVEYOR_BUILD_BUTTON = {img:ID_CONVEYOR,x:-1,y:-1,w:-1,h:-1,lastselected:DEF_CONVEYOR,tooltip:"Conveyor Belt\nMoves bots in a direction.\n\nHold (Shift) to bridge over other belts",mobileTooltip:"Conveyor Belt\nMoves bots in a direction.\n\nHold button down to toggle bridge mode. Used to bridge over other belts"}
+var CONVEYOR_BUILD_BUTTON = {img:ID_CONVEYOR,x:-1,y:-1,w:-1,h:-1,lastselected:DEF_CONVEYOR,tooltip:"Conveyor Belt\nMoves bots in a direction.\n\nHold (Shift) to bridge over other belts",mobileTooltip:"Conveyor Belt\nMoves bots in a direction.\n\nHold button down to toggle bridge mode.\nUsed to bridge over other belts"}
 var BRANCH_BUILD_BUTTON = {img:ID_BRANCH,x:-1,y:-1,w:-1,h:-1,submenu_buttons:[DEF_BRANCHUP_RB,DEF_BRANCHUP_BR,DEF_BRANCHUP_GY,DEF_BRANCHUP_YG,DEF_BRANCHUP_PPI,DEF_BRANCHUP_PIP,DEF_BRANCHUP_BLGR,DEF_BRANCHUP_GRBL],lastselected:undefined,default:DEF_BRANCHUP_RB,tooltip:"Branch\nReads next tape and moves bot in the\nmatching color direction.\n\nMoves bot forward and does not consume\ntape if no match found."}
 var WRITER_BUILD_BUTTON = {img:ID_WRITER,x:-1,y:-1,w:-1,h:-1,submenu_buttons:[DEF_WRITERRIGHT_R,DEF_WRITERRIGHT_B,DEF_WRITERRIGHT_G,DEF_WRITERRIGHT_Y,DEF_WRITERRIGHT_P,DEF_WRITERRIGHT_PI,DEF_WRITERRIGHT_BL,DEF_WRITERRIGHT_GR],lastselected:undefined,default:DEF_WRITERRIGHT_R,tooltip:"Writer\nWrites a color to the end of the tape."}
 var ROTATE_CLOCKWISE_BUTTON = {img:ID_ROTATE_CLOCKWISE,x:-1,y:-1,w:-1,h:-1,cb:rotateClockwise,tooltip:"Rotate selection clockwise."
@@ -337,7 +337,7 @@ function toggleDeleteMode(){
 	DELETEMODE=!DELETEMODE
 	if (DELETEMODE) {
 		ITEM_SELECTED=undefined
-		MOVEMODE=false
+		setMoveMode(false)
 		document.body.style.cursor="url('delete_cursor.png') 8 8,auto"
 	} else {
 		document.body.style.cursor="url('cursor.png') 8 8,auto"
@@ -1977,7 +1977,12 @@ function isMouseOverButton(button) {
 
 function DisplayTooltip(button,ctx) {
 	//240x(20*lines) (16pt font)
-	var tooltipSplit=button.tooltip.split("\n")
+	var tooltipSplit=[]
+	if (MOBILE&&button.mobileTooltip!==undefined){
+		tooltipSplit=button.mobileTooltip.split("\n")
+	} else {
+		tooltipSplit=button.tooltip.split("\n")
+	}
 	var tooltipBounds = {
 		x:Math.min(Math.max(LAST_MOUSE_X-120,0),canvas.width*0.75-240),
 		y:LAST_MOUSE_Y-tooltipSplit.length*20-4,
