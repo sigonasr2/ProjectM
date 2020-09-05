@@ -243,6 +243,8 @@ function runGameSimulation(){
 		ISTESTING=true
 		BOT_PREVX=-100
 		BOT_PREVY=-100
+		BOT_TAPE=""
+		BOT_START_TAPE=""
 		generateBotQueue()
 		//console.log(BOT_QUEUE)
 		setTimeout(()=>{
@@ -459,19 +461,19 @@ var EASYMENU={
 	title:"Beginner Stages",
 	levels:[STAGE1,STAGE2],
 	cols:1,
-	width:568*0.3
+	width:568*0.33
 }
 var MEDIUMMENU={
 	title:"Intermediate Stages",
 	levels:[STAGE1,STAGE2],
 	cols:1,
-	width:568*0.3
+	width:568*0.33
 }
 var HARDMENU={
 	title:"Advanced Stages",
 	levels:[STAGE1,STAGE2],
 	cols:1,
-	width:568*0.3
+	width:568*0.33
 }
 
 var gameGrid = []
@@ -1124,8 +1126,8 @@ function draw() {
 			}break;
 			case MAINMENU:{
 				DisplayMenu(canvas.width/2,8,TUTORIALMENU,ctx)
-				DisplayMenu((canvas.width*0.33)*0+(canvas.width*0.15)+(canvas.width*0.03),108,EASYMENU,ctx)
-				DisplayMenu((canvas.width*0.33)*1+(canvas.width*0.15)+(canvas.width*0.03),108,MEDIUMMENU,ctx)
+				DisplayMenu((canvas.width*0.33)*0+(canvas.width*0.15)+(canvas.width*0.01),108,EASYMENU,ctx)
+				DisplayMenu((canvas.width*0.33)*1+(canvas.width*0.15)+(canvas.width*0.02),108,MEDIUMMENU,ctx)
 				DisplayMenu((canvas.width*0.33)*2+(canvas.width*0.15)+(canvas.width*0.03),108,HARDMENU,ctx)
 			}break;
 			case STARTUP:{
@@ -1298,7 +1300,9 @@ function RenderGameInfo(ctx) {
 			ctx.fillText("Original Tape",canvas.width*0.75-canvas.width*0.25,20)
 			RenderTape(canvas.width*0.75-canvas.width*0.25+8,16,canvas.width*0.25-16,ctx,BOT_START_TAPE)
 		}
-		RenderTape(canvas.width*0.75+8,16,canvas.width*0.25-16,ctx,BOT_TAPE)
+		if (BOT_START_TAPE!=="") {
+			RenderTape(canvas.width*0.75+8,16,canvas.width*0.25-16,ctx,BOT_TAPE)
+		}
 		
 		
 		if (gameState===RUNNING||gameState===REVIEWING||gameState===FINISH||gameState===PAUSED) {
@@ -1668,10 +1672,10 @@ function DisplayMenu(x,y,menu,ctx) {
 	ctx.moveTo(x-menu.width/2+4,y+18)
 	ctx.lineTo(x+menu.width/2-4,y+18)
 	ctx.stroke()
-	ctx.font="16px 'Zilla Slab', serif"
-	ctx.fillStyle="white"
-	ctx.textAlign = "center"
 	for (var i=0;i<menu.levels.length;i++) {
+		ctx.font="16px 'Zilla Slab', serif"
+		ctx.fillStyle="white"
+		ctx.textAlign = "left"
 		var col = i % menu.cols
 		var row = Math.floor(i / menu.cols)
 		var colWidth = menu.width/menu.cols
@@ -1686,7 +1690,14 @@ function DisplayMenu(x,y,menu,ctx) {
 			ctx.fillRect(levelBoxBounds.x,levelBoxBounds.y,levelBoxBounds.w,levelBoxBounds.h)
 		}
 		ctx.fillStyle="white"
-		ctx.fillText(menu.levels[i].name,x+col*colWidth-((menu.cols!==1)?colWidth/2:0),y+16+24+24*row)
+		if (LevelIsBeat(menu.levels[i].name)) {
+			drawImage(x+col*colWidth+16-((menu.cols!==1)?colWidth:colWidth/2)-8,y+32+24*row,ID_COMPLETE_STAR,ctx,0,0.5)
+		}
+		ctx.fillText(menu.levels[i].name,x+col*colWidth-((menu.cols!==1)?colWidth/2:0)+20-colWidth/2,y+16+24+24*row)
+		ctx.font="12px 'Profont','Courier New', serif"
+		ctx.fillStyle="white"
+		ctx.textAlign = "center"
+		ctx.fillText(completedStages[menu.levels[i].name].score,x+col*colWidth-((menu.cols!==1)?colWidth/2:0)+colWidth/2-16,y+16+24+24*row)
 	}
 }
 
