@@ -337,6 +337,7 @@ function toggleDeleteMode(){
 	DELETEMODE=!DELETEMODE
 	if (DELETEMODE) {
 		ITEM_SELECTED=undefined
+		MOVEMODE=false
 		document.body.style.cursor="url('delete_cursor.png') 8 8,auto"
 	} else {
 		document.body.style.cursor="url('cursor.png') 8 8,auto"
@@ -950,7 +951,7 @@ function clickEvent(e) {
 		setMoveMode(true)
 	}
 	
-	if (gridModeIsAvailable()&&e.button!==0) {
+	if (!MOBILE&&gridModeIsAvailable()&&e.button!==0) {
 		setMoveMode(true)
 		e.preventDefault()
 	}
@@ -1028,7 +1029,7 @@ function releaseEvent(e) {
 	if (gridModeIsAvailable()&&ITEM_SELECTED===undefined) {
 		setMoveMode(false)
 	}
-	if (gridModeIsAvailable()&&e.button!==0) {
+	if (!MOBILE&&gridModeIsAvailable()&&e.button!==0) {
 		setMoveMode(false)
 		e.preventDefault()
 	}
