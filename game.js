@@ -297,6 +297,7 @@ function runGameSimulation(){
 				BOT_TAPE=BOT_QUEUE[0]
 			} else {
 				BOT_TAPE=TEST_RANDOM_TAPE
+				EXPECTED=gameStage.accept(BOT_TAPE)
 			}
 			BOT_START_TAPE=BOT_TAPE
 			BOT_X=gameStage.start.x
