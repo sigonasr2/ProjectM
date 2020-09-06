@@ -166,6 +166,8 @@ var LASTPOSITIONUPDATE = 0
 
 var BRIDGEDBELT = false
 
+var ALLOWEDTOCLICK = true
+
 var MOBILE = false
 
 var BELTDOWN = {type:"BELT",direction:DOWN/*,direction2 - defines a secondary direction. For two belts at once.*/}
@@ -307,6 +309,8 @@ function goHome() {
 	GRID_X=20
 	GRID_Y=20
 	ITEM_SELECTED=undefined
+	MOUSEDOWN=false
+	ALLOWEDTOCLICK=false
 	endARound()
 	for (var button of MENU.buttons) {
 		if (button.submenu_buttons) {
@@ -1693,6 +1697,8 @@ function releaseEvent(e) {
 		}
 	}
 	
+	ALLOWEDTOCLICK=true
+	
 	if (MOVEMODE) {
 		STARTDRAG=undefined
 	}
@@ -2681,8 +2687,9 @@ function DisplayMenu(x,y,menu,ctx) {
 		var colWidth = menu.width/menu.cols
 		var levelBoxBounds = {x:x+col*colWidth-((menu.cols!==1)?colWidth:colWidth/2),y:y+24+24*row,w:colWidth,h:16}
 		if (MouseOverBounds(levelBoxBounds)) {
-			if (MOUSEDOWN) {
+			if (MOUSEDOWN&&ALLOWEDTOCLICK) {
 				MOUSEDOWN=false
+				ALLOWEDTOCLICK=false
 				loadStage(menu.levels[i])
 				gameState=WAITING
 			}
