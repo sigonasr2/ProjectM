@@ -1526,8 +1526,10 @@ function clickEvent(e) {
 	if (gameState===STARTUP) {
 		currentSound.play()
 		setupTitleScreen()
+		MOUSEDOWN=false
 	}
 	if (gameState===TITLE) {
+		MOUSEDOWN=false
 		if (new Date().getTime()-TITLESCREENTIMELINE>=15000) {
 			if (FIRSTBOOT) {
 				loadStage(TUTORIAL1)
