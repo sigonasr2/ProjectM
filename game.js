@@ -96,8 +96,13 @@ const STARTUP = 8;
 const INFO = 9;
 
 const ONE_TEST = -1;
+const BLANK_TEST = -2;
 const NORMAL_TEST = 0;
 const EVEN_LENGTH_TEST = 1; //Only generate even length tapes.
+
+const NONE = 0;
+const BINARY = 1;
+const STRING = 2;
 
 var ISTESTING = false;
 var MOUSEOVERTIME = -1
@@ -262,8 +267,10 @@ var CREDITS=">CREDITS\n\n"
 +"\n"
 +">Music is from an excerpt from the Shostakovich - Symphony No.9 Performance\n"
 +"\n"
-+"All graphics were designed by myself\n"
++"All graphics were designed by myself.\n"
 +">(@sigonasr2) Joshua Sigona - Creator of The Great Conversion\n"
++"\n"
++"Font licenses are included in attached License files."
 
 
 var MENU = {
@@ -288,6 +295,7 @@ function goHome() {
 	GRID_X=20
 	GRID_Y=20
 	ITEM_SELECTED=undefined
+	endARound()
 	for (var button of MENU.buttons) {
 		if (button.submenu_buttons) {
 			button.lastselected=button.default
@@ -445,7 +453,7 @@ var STAGE1 = {
 	accept:(tape)=>true}
 var STAGE2 = {
 	name:"Blue Blue",
-	objective:"Accept only Blue Bots",
+	objective:"Accept only bots that have all B markers.",
 	level:createGrid(5,5,4,2),
 	start:{x:0,y:2},
 	accept:(tape)=>{
@@ -462,7 +470,7 @@ var STAGE2 = {
 	}
 var STAGE3 = {
 	name:"Balance",
-	objective:"Accept bots with the same number of red and blue.",
+	objective:"Accept bots with an equal number of R and B markers in total.",
 	level:createGrid(15,15,14,14),
 	start:{x:0,y:0},
 	accept:(tape)=>{
@@ -491,11 +499,11 @@ var TUTORIAL1 = {
 	accept:(tape)=>{
 			return true;
 		},
-	generator:ONE_TEST
+	//display:BINARY
 }
 var TUTORIAL2 = {
 	name:"Branches",
-	objective:"We have to make sure we are sending robots that meet our needs! Use the branch to filter out robots that start with a red signal. Send only those to the exit!",
+	objective:"We have to make sure we are sending robots that meet our needs! Use the branch to filter out robots that start with a R signal. Send only those to the exit!",
 	level:createGrid(5,5,4,2),
 	start:{x:0,y:2},
 	locked:[WRITER_BUILD_BUTTON],
@@ -506,11 +514,13 @@ var TUTORIAL2 = {
 			} else {
 				return false;
 			}
-		}
+		},
+	//generator:BLANK_TEST,
+	//display:STRING
 	}
 var TUTORIAL3 = {
 	name:"Writers",
-	objective:"CONVERSION! It's time to convert robots to what they should be. Add 3 blue signals to every bot that comes through. We shall convert them all!",
+	objective:"CONVERSION! It's time to convert robots to what they should be. Add 3 B signals to every bot that comes through. We shall convert them all!",
 	level:createGrid(5,5,4,2),
 	start:{x:0,y:2},
 	tutorial:true,
@@ -520,7 +530,7 @@ var TUTORIAL3 = {
 	}
 var TUTORIAL4 = {
 	name:"More Colors",
-	objective:"You may be required to use different colors, either for your purposes or mine. For this robot cycle, convert all blue and red signals to yellow signals.",
+	objective:"You may be required to use different colors, either for your purposes or mine. For this robot cycle, convert all B and R signals to Y signals.",
 	level:createGrid(5,5,4,2),
 	start:{x:0,y:2},
 	accept:(tape)=>{
@@ -558,7 +568,7 @@ var HARDMENU={
 }
 
 var gameGrid = []
-var completedStages = {"Blue Blue":{data:[],complete:false}} //Example completed structure.
+var completedStages = undefined //Example completed structure.
 
 function setCookie(cname, cvalue, exdays) {
   var d = new Date();
@@ -676,6 +686,9 @@ function generateBotQueue() {
 			case ONE_TEST:{
 				tests = ["RRR"]
 			}break;
+			case BLANK_TEST:{
+				tests = [""]
+			}break;
 			default:{
 				for (var i=0;i<MAX_VALUE;i++) {
 					tests.push(ConvertNumberToTape(startingValue++))
@@ -735,9 +748,9 @@ function ConvertNumberToTape(val) {
 	while (remainingVal>0) {
 		var mask = remainingVal&1
 		if (mask===1) {
-			tape="B"+tape
+			tape=BLUE+tape
 		} else {
-			tape="R"+tape
+			tape=RED+tape
 		}
 		remainingVal=remainingVal>>>1
 	}
@@ -1673,47 +1686,136 @@ function RenderGameInfo(ctx) {
 	}
 }
 
+var DARKCOLORS = [PURPLE,GRAY,BLACK]
+
+function drawTape(color,ctx,x,y,ySpacing,first=false,last=false,firstInRow=false) {
+	ctx.font="bold 12px 'Profont','Courier New', serif"
+	
+	if (first) {
+		ctx.fillStyle="rgb(222, 210, 158)"
+		ctx.fillRect(x-8,y-8,16,16)
+	}
+	
+	if (DARKCOLORS.includes(color)) {
+		ctx.fillStyle="rgb(210,210,210)"
+	} else {
+		ctx.fillStyle="black"
+	}
+	ctx.textAlign = "center"
+	switch (color) {
+		case RED:{
+			drawImage(x,y,ID_DOT_R,ctx,0)
+		}break;
+		case BLUE:{
+			drawImage(x,y,ID_DOT_B,ctx,0)
+		}break;
+		case GREEN:{
+			drawImage(x,y,ID_DOT_G,ctx,0)
+		}break;
+		case YELLOW:{
+			drawImage(x,y,ID_DOT_Y,ctx,0)
+		}break;
+		case PURPLE:{
+			drawImage(x,y,ID_DOT_P,ctx,0)
+		}break;
+		case PINK:{
+			drawImage(x,y,ID_DOT_PI,ctx,0)
+		}break;
+		case BLACK:{
+			drawImage(x,y,ID_DOT_BL,ctx,0)
+		}break;
+		case GRAY:{
+			drawImage(x,y,ID_DOT_GR,ctx,0)
+		}break;
+	}
+	
+	if (last) {
+		ctx.strokeStyle="white"
+		ctx.lineWidth=1
+		ctx.beginPath()
+		ctx.moveTo(x-16,y)
+		ctx.lineTo(x-8,y)
+		ctx.moveTo(x-12,y-4)
+		ctx.lineTo(x-8,y)
+		ctx.moveTo(x-12,y+4)
+		ctx.lineTo(x-8,y)
+		ctx.stroke()
+	}
+	
+	if (firstInRow) {
+		ctx.strokeStyle="white"
+		ctx.lineWidth=1
+		ctx.beginPath()
+		ctx.moveTo(x,y)
+		ctx.lineTo(x,y-6)
+		ctx.lineTo(x-112,y-6)
+		ctx.lineTo(x-112,y-ySpacing)
+		ctx.stroke()
+	}
+	
+	ctx.fillText(color,x,y+4)
+}
+
 function RenderTape(x,y,width,ctx,tape) {
-	var xOffset=0
+	var xOffset=width-24
 	var yOffset=0
 	var ySpacingMult=1
 	var ySpacing=12
 	if (tape.length>5*5) {
 		ySpacingMult=(ySpacing*5)/(Math.ceil(tape.length/5)*ySpacing)
 	}
-	for (var i=0;i<Math.min(tape.length,1024);i++) {
-		switch (tape[i]) {
-			case RED:{
-				drawImage(x+xOffset+16,y+yOffset+16,ID_DOT_R,ctx,0)
-			}break;
-			case BLUE:{
-				drawImage(x+xOffset+16,y+yOffset+16,ID_DOT_B,ctx,0)
-			}break;
-			case GREEN:{
-				drawImage(x+xOffset+16,y+yOffset+16,ID_DOT_G,ctx,0)
-			}break;
-			case YELLOW:{
-				drawImage(x+xOffset+16,y+yOffset+16,ID_DOT_Y,ctx,0)
-			}break;
-			case PURPLE:{
-				drawImage(x+xOffset+16,y+yOffset+16,ID_DOT_P,ctx,0)
-			}break;
-			case PINK:{
-				drawImage(x+xOffset+16,y+yOffset+16,ID_DOT_PI,ctx,0)
-			}break;
-			case BLACK:{
-				
-				drawImage(x+xOffset+16,y+yOffset+16,ID_DOT_BL,ctx,0)
-			}break;
-			case GRAY:{
-				
-				drawImage(x+xOffset+16,y+yOffset+16,ID_DOT_GR,ctx,0)
-			}break;
-		}
-		xOffset+=24;
-		if (xOffset>width-24) {
-			xOffset=0;
+	yOffset=ySpacing*ySpacingMult
+	for (var i=5;i<Math.min(tape.length,1024);i++) {
+		drawTape(tape[i],ctx,x+xOffset+16,y+yOffset+16,ySpacing*ySpacingMult,i===0,i!==Math.min(tape.length,1024)-1,i%5===0)
+		xOffset-=24;
+		if (xOffset<0) {
+			xOffset=width-24;
 			yOffset+=ySpacing*ySpacingMult;
+		}
+	}
+	xOffset=width-24
+	yOffset=0
+	for (var i=0;i<Math.min(tape.length,5);i++) {
+		drawTape(tape[i],ctx,x+xOffset+16,y+yOffset+16,ySpacing*ySpacingMult,i===0,i!==Math.min(tape.length,1024)-1,false)
+		xOffset-=24;
+		if (xOffset<0) {
+			xOffset=width-24;
+			yOffset+=ySpacing*ySpacingMult;
+		}
+	}
+	
+	function interpretBinary(tape) {
+		var numb = 0;
+		for (var i=tape.length-1;i>=0;i--) {
+			if (tape[i]===RED) {
+				numb=numb<<1;
+				numb=numb|0
+			} else 
+			if (tape[i]===BLUE) {
+				numb=numb<<1;
+				numb=numb|1
+			}
+		}
+		return numb
+	}
+	
+	if (gameStage.display!==undefined) {
+		switch (gameStage.display) {
+			case BINARY:{
+				ctx.fillStyle="white"
+				ctx.fillText(interpretBinary(tape),x+xOffset+16,y+yOffset+16+4)
+			}break;
+			case STRING:{
+				ctx.fillStyle="white"
+				var splitString=tape.split(YELLOW)
+				var finalString="\""
+				for (var i=0;i<splitString.length;i++) {
+					var binary = interpretBinary(splitString[i])
+					finalString+=String.fromCharCode(binary)
+				}
+				finalString+="\""
+				ctx.fillText(finalString,x+xOffset+16,y+yOffset+16+4)
+			}break;
 		}
 	}
 }
@@ -1917,6 +2019,30 @@ function RenderConveyor(x,y,ctx,icon_definition,dir=0,background=undefined,grid=
 	}
 }
 
+function DrawDirectionalColorText(x,y,color1,color2,dir,ctx) {
+	ctx.font="bold 12px 'Profont','Courier New', serif"
+	ctx.fillStyle="black"
+	ctx.textAlign = "center"
+	switch (dir) {
+		case UP:{
+			ctx.fillText(color1,x+12,y-8)
+			ctx.fillText(color2,x-12,y-8)
+		}break;
+		case DOWN:{
+			ctx.fillText(color1,x-12,y+14)
+			ctx.fillText(color2,x+12,y+14)
+		}break;
+		case RIGHT:{
+			ctx.fillText(color1,x+12,y+4+12)
+			ctx.fillText(color2,x+12,y+4-12)
+		}break;
+		case LEFT:{
+			ctx.fillText(color1,x-10,y+4-12)
+			ctx.fillText(color2,x-10,y+4+12)
+		}break;
+	}
+}
+
 function RenderIcon(x,y,ctx,icon_definition,dir=0,background=undefined,renderToGrid=undefined,scale=1) {
 	if (background!==undefined) {
 		ctx.fillStyle=background
@@ -1946,12 +2072,22 @@ function RenderIcon(x,y,ctx,icon_definition,dir=0,background=undefined,renderToG
 					x+16,
 					y+16,
 					GetArrowImage(icon_definition.color2),ctx,dir*90+180,scale)
+				DrawDirectionalColorText(x+16,y+16,icon_definition.color1,icon_definition.color2,dir,ctx)
 			}break;
 			case ID_WRITER:{
 				drawImage(
 					x+16,
 					y+16,
 					GetDotImage(icon_definition.color1),ctx,dir*90-90,scale)
+				ctx.font="bold 12px 'Profont','Courier New', serif"
+				var darkcolors = [PURPLE,GRAY,BLACK]
+				if (darkcolors.includes(icon_definition.color1)) {
+					ctx.fillStyle="rgb(210,210,210)"
+				} else {
+					ctx.fillStyle="black"
+				}
+				ctx.textAlign = "center"
+				ctx.fillText(icon_definition.color1,x+16,y+16+4)
 			}break;
 		}
 	}
