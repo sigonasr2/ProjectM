@@ -95,10 +95,19 @@ const TITLE = 7;
 const STARTUP = 8;
 const INFO = 9;
 
+var WAITINGTOFINISH=false
+
 const ONE_TEST = -1;
 const BLANK_TEST = -2;
 const NORMAL_TEST = 0;
 const EVEN_LENGTH_TEST = 1; //Only generate even length tapes.
+const ODD_LENGTH_TEST = 3; //Only generates odd length tapes.
+const BINARY_TEST = 4; //Generates valid binary numbers (never has a trailing R)
+const BSTAGE2_TEST = 2;
+const TWO_NUMBERS_TEST = 5; //Generates two binary numbers separated by a green dot.
+const SUBSTRING_TEST = 6; //Generates two yellow dots to indicate a substring to cut out.
+const UPPERCASE_CHARACTER_TEST = 7; //Generates uppercase letters separated by yellow.
+const TWO_UNEQUAL_NUMBERS_TEST = 8; //Two unequal numbers will be generated separated by a green.
 
 const NONE = 0;
 const BINARY = 1;
@@ -130,6 +139,7 @@ var BOT_Y = -1
 var BOT_DIR = RIGHT
 var BOT_STATE = ALIVE
 var BOT_TAPE = "RB"
+var GHOST_BOT_TAPE = "RB"
 var BOT_START_TAPE = BOT_TAPE
 var BOT_QUEUE = []
 var DELETEMODE = false
@@ -292,6 +302,8 @@ function goHome() {
 	MENU.visible=false
 	BRIDGEDBELT=false
 	setMoveMode(false)
+	BOT_TAPE=""
+	GHOST_BOT_TAPE=""
 	GRID_X=20
 	GRID_Y=20
 	ITEM_SELECTED=undefined
@@ -312,39 +324,38 @@ function runGameSimulation(){
 		BOT_PREVX=-100
 		BOT_PREVY=-100
 		BOT_TAPE=""
+		GHOST_BOT_TAPE=""
+		ITEM_SELECTED=undefined
 		BOT_START_TAPE=undefined
+		if (gameSpeed===-1) {
+			gameSpeed=1000/1
+		}
 		setMoveMode(false)
 		generateBotQueue()
-		//console.log(BOT_QUEUE)
-		setTimeout(()=>{
-			ISTESTING=false
-			if (BOT_QUEUE.length>0) {
-				BOT_TAPE=BOT_QUEUE[0]
-			} else {
-				BOT_TAPE=TEST_RANDOM_TAPE
-				EXPECTED=gameStage.accept(BOT_TAPE)
+		ISTESTING=false
+		if (BOT_QUEUE.length>0) {
+			BOT_TAPE=BOT_QUEUE[0]
+		} else {
+			BOT_TAPE=TEST_RANDOM_TAPE
+			EXPECTED=gameStage.accept(BOT_TAPE)
+		}
+		BOT_START_TAPE=BOT_TAPE
+		BOT_X=gameStage.start.x
+		BOT_Y=gameStage.start.y
+		BOT_PREVX=BOT_X
+		BOT_PREVY=BOT_Y
+		BOT_STATE=ALIVE
+		gameState=WAITING
+		BOT_DIR=RIGHT
+		gameState=RUNNING
+		gameState=RUNNING
+		MESSAGETIMER=new Date().getTime()+3000
+		for (var i=0;i<MENU.buttons.length;i++) {
+			if (MENU.buttons[i].img===ID_PLAY) {
+				MENU.buttons[i]=PAUSE_BUTTON
+				break;
 			}
-			BOT_START_TAPE=BOT_TAPE
-			BOT_X=gameStage.start.x
-			BOT_Y=gameStage.start.y
-			BOT_PREVX=BOT_X
-			BOT_PREVY=BOT_Y
-			BOT_STATE=ALIVE
-			gameState=WAITING
-			BOT_DIR=RIGHT
-			gameState=RUNNING
-			if (gameSpeed===-1) {
-				gameSpeed=1000/1
-			}
-			gameState=RUNNING
-			MESSAGETIMER=new Date().getTime()+3000
-			for (var i=0;i<MENU.buttons.length;i++) {
-				if (MENU.buttons[i].img===ID_PLAY) {
-					MENU.buttons[i]=PAUSE_BUTTON
-					break;
-				}
-			}
-		},300)
+		}
 	}
 	gameState=RUNNING
 	for (var i=0;i<MENU.buttons.length;i++) {
@@ -489,6 +500,423 @@ var STAGE3 = {
 			return blues===reds;
 		}
 	}
+var BSTAGE1 = {
+	name:"Bloody Red",
+	objective:`Output just the ${RED} markers from a bot.`,
+	level:createGrid(5,5,4,4),
+	start:{x:0,y:0},
+	accept:(tape)=>{
+		var finalTape=""
+		for (var i=0;i<tape.length;i++) {
+			if (tape[i]===RED) {
+				finalTape+=RED
+			}
+		}
+		return finalTape
+	},
+	//generator:BLANK_TEST,
+	//display:STRING
+}
+var BSTAGE2 = {
+	name:"Crazy Conversion",
+	objective:`Given that ${YELLOW}=${RED}, ${GREEN}=${BLUE}${BLUE}${RED}, ${PURPLE}=${BLUE}${RED}, ${PINK}=${RED}${RED}${RED}, ${BLACK}=${RED}${BLUE}, ${GRAY}=${BLUE}, convert all the bots to the correct ${RED} and ${BLUE} values.`,
+	level:createGrid(11,11,10,0),
+	start:{x:0,y:10},
+	accept:(tape)=>{
+		var finalTape=""
+		for (var i=0;i<tape.length;i++) {
+			switch (tape[i]) {
+				case YELLOW:{
+					finalTape+=`${RED}`
+				}break;
+				case GREEN:{
+					finalTape+=`${BLUE}${BLUE}${RED}`
+				}break;
+				case PURPLE:{
+					finalTape+=`${BLUE}${RED}`
+				}break;
+				case PINK:{
+					finalTape+=`${RED}${RED}${RED}`
+				}break;
+				case BLACK:{
+					finalTape+=`${RED}${BLUE}`
+				}break;
+				case GRAY:{
+					finalTape+=`${BLUE}`
+				}break;
+			}
+		}
+		return finalTape
+	},
+	generator:BSTAGE2_TEST,
+	//display:STRING
+}
+var BSTAGE3 = {
+	name:"Double Trouble",
+	objective:`For every dot on the tape, double the output. Ex. ${RED}${RED}${RED}${BLUE} should output ${RED}${RED}${RED}${RED}${RED}${RED}${BLUE}${BLUE}.`,
+	level:createGrid(5,5,4,4),
+	start:{x:0,y:0},
+	accept:(tape)=>{
+		var finalTape=""
+		for (var i=0;i<tape.length;i++) {
+			finalTape+=tape[i]+tape[i]
+		}
+		return finalTape
+	},
+	//generator:BLANK_TEST,
+	//display:STRING
+}
+var BSTAGE4 = {
+	name:"Back of the line",
+	objective:`Replace the last marker on the tape with a ${YELLOW} marker.`,
+	level:createGrid(5,5,4,4),
+	start:{x:0,y:0},
+	accept:(tape)=>{
+		var finalTape = tape.substring(0,tape.length-1)
+		finalTape+=YELLOW
+		return finalTape
+	},
+	//generator:BLANK_TEST,
+	//display:STRING
+}
+var BSTAGE5 = {
+	name:"Back and Forth",
+	objective:`Accept robots that have alternating colors.`,
+	level:createGrid(7,7,6,6),
+	start:{x:0,y:0},
+	accept:(tape)=>{
+		var finalTape=""
+		var lastCol=""
+		for (var i=0;i<tape.length;i++) {
+			if (tape[i]===lastCol) {
+				return false
+			} else {
+				lastCol=tape[i]
+			}
+		}
+		return true
+	},
+	//generator:BLANK_TEST,
+	//display:STRING
+}
+var BSTAGE6 = {
+	name:"#olcCodeJam2020",
+	objective:`Output the string "#olcCodeJam2020", using Binary ASCII characters (${RED}=0 ${BLUE}=1) and using ${YELLOW} markers as a separator. Ex: "A"=65=${BLUE}${RED}${RED}${RED}${RED}${RED}${BLUE}, "b"=98=${RED}${BLUE}${RED}${RED}${RED}${BLUE}${BLUE}`,
+	level:createGrid(12,12,11,11),
+	start:{x:0,y:0},
+	accept:(tape)=>{
+		return {string:"#olcCodeJam2020"}
+	},
+	generator:BLANK_TEST,
+	display:STRING
+}
+var BSTAGE7 = {
+	name:"End-to-End",
+	objective:`Accept robots that have the same first and last colors on their tapes. Ex: ${RED}${BLUE}${RED} is accepted, ${RED}${BLUE}${BLUE} is not.`,
+	level:createGrid(7,7,6,6),
+	start:{x:0,y:0},
+	accept:(tape)=>{
+		var first=""
+		var last=""
+		if (tape.length>0) {
+			first=tape[0]
+			last=tape[tape.length-1]
+		}
+		return first===last
+	},
+	//generator:BLANK_TEST,
+	//display:STRING
+}
+var BSTAGE8 = {
+	name:"Greatest Count",
+	objective:`Given an odd number of ${BLUE}s and ${RED}s, determine if there are more ${BLUE}s or more ${RED}s and only return those markers. Ex: ${BLUE}${BLUE}${BLUE}${RED}${RED} should output as ${BLUE}${BLUE}${BLUE} (3>2)`,
+	level:createGrid(9,9,8,8),
+	start:{x:0,y:0},
+	accept:(tape)=>{
+		var blues = ""
+		var reds = ""
+		for (var i=0;i<tape.length;i++) {
+			if (tape[i]===BLUE) {
+				blues+=BLUE
+			} else
+			if (tape[i]===RED) {
+				reds+=RED
+			}
+		}
+		return (blues.length>reds.length)?blues:reds
+	},
+	generator:ODD_LENGTH_TEST,
+	//display:STRING
+}
+var ISTAGE2 = {
+	name:"Oddly Even",
+	objective:`Accepts bots that have an even length of tape.`,
+	level:createGrid(7,7,6,6),
+	start:{x:0,y:0},
+	accept:(tape)=>{
+		return tape.length%2===0
+	},
+	//generator:BLANK_TEST,
+	//display:STRING
+}
+var ISTAGE3 = {
+	name:"Add One",
+	objective:`Given a tape representing binary (${RED}=0 ${BLUE}=1), add 1 to the number. Ex: ${BLUE}${RED}${BLUE}(5) should output ${BLUE}${BLUE}${RED}(6)`,
+	level:createGrid(9,9,8,8),
+	start:{x:0,y:0},
+	accept:(tape)=>{
+		var answer = tapeToBinary(tape)+1
+		return binaryToTape(answer)
+	},
+	generator:BINARY_TEST,
+	display:BINARY
+}
+var ISTAGE4 = {
+	name:"String Length",
+	objective:`Return the number of ${RED}s from a bot as a binary number (${RED}=0 ${BLUE}=1). Ex: ${RED}${RED}${RED}${BLUE}${RED} should output as ${BLUE}${RED}${RED} (4 ${RED}s)`,
+	level:createGrid(13,13,12,12),
+	start:{x:0,y:0},
+	accept:(tape)=>{
+		var reds = 0
+		for (var i=0;i<tape.length;i++) {
+			if (tape[i]===RED) {
+				reds++
+			}
+		}
+		return binaryToTape(reds)
+	},
+	//generator:BINARY_TEST,
+	display:BINARY
+}
+var ISTAGE1 = {
+	name:"Blue In Blue Out",
+	objective:`Output the tape with all the ${BLUE}s moved to the front.`,
+	level:createGrid(7,7,6,6),
+	start:{x:0,y:0},
+	accept:(tape)=>{
+		var blues = ""
+		var reds = ""
+		for (var i=0;i<tape.length;i++) {
+			if (tape[i]===BLUE) {
+				blues+=BLUE
+			} else
+			if (tape[i]===RED) {
+				reds+=RED
+			}
+		}
+		return blues+reds
+	},
+	//generator:BINARY_TEST,
+	//display:BINARY
+}
+var ISTAGE5 = {
+	name:"NoLemonsNoMelon",
+	objective:`Accept bots that are a palindrome. Ex: ${BLUE}${RED}${RED}${BLUE} is a palindrome, ${BLUE}${RED}${BLUE} is a palindrome, ${BLUE}${RED}${BLUE}${RED} is not a palindrome.`,
+	level:createGrid(7,7,6,6),
+	start:{x:0,y:0},
+	accept:(tape)=>{
+		for (var i=0;i<tape.length/2;i++) {
+			if (tape[i]!==tape[tape.length-1-i]) {
+				return false;
+			}
+		}
+		return true;
+	},
+	//generator:ODD_LENGTH_TEST,
+	//display:BINARY
+}
+var ISTAGE6 = {
+	name:"Is Equal To",
+	objective:`Given 2 binary numbers (${RED}=0 ${BLUE}=1) separated by a ${GREEN} marker, accept bots where the 2 numbers are equal. Ex. ${RED}${BLUE}${RED}${GREEN}${RED}${BLUE}${RED} (2/2) should be accepted while ${BLUE}${RED}${GREEN}${RED}${BLUE} (2/1) should not be.`,
+	level:createGrid(11,11,10,10),
+	start:{x:0,y:0},
+	accept:(tape)=>{
+		var temp = ""
+		var number1 = -1
+		var number2 = -1
+		for (var i=0;i<tape.length;i++) {
+			if (tape[i]===GREEN) {
+				if (number1===-1) {
+					number1=tapeToBinary(temp)
+				}
+				temp=""
+			} else {
+				temp+=tape[i]
+			}
+		}
+		number2=tapeToBinary(temp)
+		return number1===number2
+	},
+	generator:TWO_NUMBERS_TEST,
+	display:BINARY
+}
+var ISTAGE7 = {
+	name:"Substring",
+	objective:`Given a tape with 2 ${YELLOW} markers, return all the contents between the 2 ${YELLOW} markers. Ex: ${BLUE}${RED}${YELLOW}${RED}${RED}${BLUE}${YELLOW}${RED}${RED}${RED} should output ${RED}${RED}${BLUE}`,
+	level:createGrid(7,7,6,6),
+	start:{x:0,y:0},
+	accept:(tape)=>{
+		var found = ""
+		var start = false
+		for (var i=0;i<tape.length;i++) {
+			if (tape[i]===YELLOW) {
+				if (!start) {
+					start=true
+				} else {
+					break;
+				}
+			} else {
+				if (start) {
+					found+=tape[i]
+				}
+			}
+		}
+		return found;
+	},
+	generator:SUBSTRING_TEST,
+	//display:BINARY
+}
+var ISTAGE8 = {
+	name:"Reversal",
+	objective:`Reverse the input string. Ex: ${BLUE}${BLUE}${RED}${BLUE}${BLUE} -> ${BLUE}${BLUE}${RED}${BLUE}${BLUE}${RED}${RED}${RED}`,
+	level:createGrid(11,11,10,10),
+	start:{x:0,y:0},
+	accept:(tape)=>{
+		return tape.split("").reverse().join("")
+	},
+	//generator:SUBSTRING_TEST,
+	//display:BINARY
+}
+var ASTAGE1 = {
+	name:"Right in the Center",
+	objective:`Given an even length tape, add a ${YELLOW} marker in the middle of it.`,
+	level:createGrid(10,10,9,9),
+	start:{x:0,y:0},
+	accept:(tape)=>{
+		return tape.substring(0,tape.length/2)+"Y"+tape.substring(tape.length/2,tape.length)
+	},
+	generator:EVEN_LENGTH_TEST,
+	//display:STRING
+}
+var ASTAGE2 = {
+	name:"toLowerCase",
+	objective:`Given a string of uppercase ASCII binary characters (${RED}=0 ${BLUE}=1) separated by ${YELLOW}, convert all uppercase to lowercase. Ex: "HI"= ${BLUE}${RED}${RED}${BLUE}${RED}${RED}${RED}Y${BLUE}${RED}${RED}${BLUE}${RED}${RED}${BLUE} output as "hi"= ${BLUE}${BLUE}${RED}${BLUE}${RED}${RED}${RED}Y${BLUE}${BLUE}${RED}${BLUE}${RED}${RED}${BLUE}`,
+	level:createGrid(25,25,24,24),
+	start:{x:0,y:0},
+	accept:(tape)=>{
+		var chars=tape.split(YELLOW)
+		var finalString = ""
+		for (var i=0;i<chars.length;i++) {
+			chars[i]=binaryToTape(tapeToBinary(chars[i])+32)
+		}
+		return chars.join(YELLOW)
+	},
+	generator:UPPERCASE_CHARACTER_TEST,
+	display:STRING
+}
+var ASTAGE3 = {
+	name:"Addition",
+	objective:`Given 2 binary numbers (R=0 B=1) separated by a green dot, output the addition of those two numbers.`,
+	level:createGrid(15,15,14,14),
+	start:{x:0,y:0},
+	accept:(tape)=>{
+		var temp = ""
+		var number1 = -1
+		var number2 = -1
+		for (var i=0;i<tape.length;i++) {
+			if (tape[i]===GREEN) {
+				if (number1===-1) {
+					number1=tapeToBinary(temp)
+				}
+				temp=""
+			} else {
+				temp+=tape[i]
+			}
+		}
+		number2=tapeToBinary(temp)
+		return binaryToTape(number1+number2)
+	},
+	generator:TWO_NUMBERS_TEST,
+	display:BINARY
+}
+var ASTAGE4 = {
+	name:"The Great Conversion",
+	objective:`Convert every other ${RED} to ${BLUE}${GREEN}, then for every found ${BLUE}${RED} sequence, turn them into ${RED}${RED} and run the checks again. Ex: ${RED}${RED}${BLUE}${BLUE}${RED}${BLUE}${BLUE}${BLUE}${RED} -> ${RED}${BLUE}${GREEN}${BLUE}${BLUE}${RED}${BLUE}${BLUE}${BLUE}${BLUE}${GREEN} -> ${RED}${BLUE}${GREEN}${BLUE}${RED}${RED}${BLUE}${BLUE}${BLUE}${BLUE}${GREEN} -> ${RED}${BLUE}${GREEN}${BLUE}${BLUE}${GREEN}${RED}${BLUE}${BLUE}${BLUE}${BLUE}${GREEN}`,
+	level:createGrid(13,13,6,6),
+	start:{x:0,y:6},
+	accept:(tape)=>{
+		var first=false;
+		var newString=""
+		var found=true
+		var limit=2
+		while (found&&limit-->0) {
+			found=false
+			first=false
+			//Red->Blue-Green
+			for (var i=0;i<tape.length;i++) {
+				if (tape[i]===RED) {
+					if (first) {
+						found=true
+						newString+=BLUE+GREEN
+						first=false
+					} else {
+						newString+=RED
+						first=true
+					}
+				} else {
+					newString+=tape[i]
+				}
+			}
+			tape=newString
+			newString=""
+			//BR -> RR
+			var last = ""
+			for (var i=0;i<tape.length;i++) {
+				if (tape[i]===BLUE) {
+					if (i+1<tape.length&&tape[i+1]===RED) {
+						newString+=RED+RED
+						i+=1
+					} else {
+						newString+=tape[i]
+					}
+				} else 
+				{
+					newString+=tape[i]
+				}
+			}
+			tape=newString
+			newString=""
+		}
+		return tape
+	},
+	//generator:TWO_NUMBERS_TEST,
+	//display:BINARY
+}
+var ASTAGE5 = {
+	name:"Compare",
+	objective:`Given 2 distinct binary values (${RED}=0 ${BLUE}=1) separated by a green dot, output the greater of the two numbers Ex: ${BLUE}${BLUE}${BLUE}${RED}${BLUE}${GREEN}${BLUE}${BLUE}${RED}${RED}${RED} (29/24) outputs as ${BLUE}${BLUE}${BLUE}${RED}${BLUE} (29>24)`,
+	level:createGrid(17,17,16,16),
+	start:{x:0,y:0},
+	accept:(tape)=>{
+		var temp = ""
+		var number1 = -1
+		var number2 = -1
+		for (var i=0;i<tape.length;i++) {
+			if (tape[i]===GREEN) {
+				if (number1===-1) {
+					number1=tapeToBinary(temp)
+				}
+				temp=""
+			} else {
+				temp+=tape[i]
+			}
+		}
+		number2=tapeToBinary(temp)
+		return binaryToTape((number1>number2)?number1:number2)
+	},
+	generator:TWO_UNEQUAL_NUMBERS_TEST,
+	display:BINARY
+}
 var TUTORIAL1 = {
 	name:"Conveyors!",
 	objective:"To convert your robots, you must send them from the entrance to the exit. Select a belt and send robots to where they truly belong.  Press the Play button to test your machine!",
@@ -541,6 +969,15 @@ var TUTORIAL4 = {
 			return newTape
 		}
 	}
+var SANDBOX = {
+	name:"The Sandbox",
+	objective:"You may experiment freely in this very large room.",
+	level:createGrid(50,50,24,24),
+	start:{x:0,y:0},
+	accept:(tape)=>{
+			return true
+		}
+	}
 
 var TUTORIALMENU={
 	title:"Introduction to Conversion",
@@ -550,19 +987,25 @@ var TUTORIALMENU={
 }
 var EASYMENU={
 	title:"Beginner Stages",
-	levels:[STAGE1,STAGE2],
+	levels:[BSTAGE1,BSTAGE2,BSTAGE3,BSTAGE4,BSTAGE5,BSTAGE6,BSTAGE7,BSTAGE8],
 	cols:1,
 	width:568*0.33
 }
 var MEDIUMMENU={
 	title:"Intermediate Stages",
-	levels:[STAGE3,STAGE2],
+	levels:[ISTAGE1,ISTAGE2,ISTAGE3,ISTAGE4,ISTAGE5,ISTAGE6,ISTAGE7,ISTAGE8],
 	cols:1,
 	width:568*0.33
 }
 var HARDMENU={
 	title:"Advanced Stages",
-	levels:[STAGE1,STAGE2],
+	levels:[ASTAGE1,ASTAGE2,ASTAGE3,ASTAGE4,ASTAGE5],
+	cols:1,
+	width:568*0.33
+}
+var SANDBOXMENU={
+	title:"Sandbox",
+	levels:[SANDBOX],
 	cols:1,
 	width:568*0.33
 }
@@ -620,10 +1063,39 @@ function resetGame() {
 	MENU.visible=false
 }
 
+function convertStringToTape(str) {
+	var finalTape=""
+	for (var i=0;i<str.length;i++) {
+		if (finalTape!=="") {
+			finalTape+=YELLOW
+		}
+		finalTape+=binaryToTape(str.charCodeAt(i))
+	}
+	return finalTape
+}
+
 function decideIfWrongBot(isSupposedToBeAccepted,tape) {
 	var result;
 	var wrongBot=false;
 	switch (typeof(isSupposedToBeAccepted)) {
+		case "object":{
+			if (isSupposedToBeAccepted.string!==undefined) {
+				if (getSimulatedBotResult(tape)) {
+					result = BOT_TAPE
+					if (result===convertStringToTape(isSupposedToBeAccepted.string)) {
+						wrongBot=false
+					} else {
+						wrongBot=true
+					}
+					isSupposedToBeAccepted=isSupposedToBeAccepted.string
+				} else {
+					if (BOT_QUEUE.length===0) {
+						BOT_DID_NOT_REACH_EXIT=true
+					}
+					wrongBot=true;
+				}
+			}
+		}break;
 		case "string":{
 			if (getSimulatedBotResult(tape)) {
 				result = BOT_TAPE
@@ -674,12 +1146,106 @@ function generateBotQueue() {
 			generator=NORMAL_TEST
 		}
 		switch (generator) {
+			case BSTAGE2_TEST:{
+				for (var i=0;i<MAX_VALUE;i++) {
+					var newTape=""
+					var numb=i;
+					while (numb>0) {
+						var mask = numb&7
+						switch (mask) {
+							case 0:{
+								newTape+=GREEN
+							}break;
+							case 1:{
+								newTape+=YELLOW
+							}break;
+							case 2:{
+								newTape+=PURPLE
+							}break;
+							case 3:{
+								newTape+=PINK
+							}break;
+							case 4:{
+								newTape+=BLACK
+							}break;
+							case 5:{
+								newTape+=GRAY
+							}break;
+							default:{
+								newTape+=GREEN
+							}
+						}
+						numb=numb>>>3
+					}
+					tests.push(newTape)
+				}
+			}break;
 			case EVEN_LENGTH_TEST:{
 				while (tests.length<2000) {
-					var newTape = ConvertNumberToTape(startingValue++)
+					var newTape = binaryToTape(startingValue++)
 					if (newTape.length%2===0) {
 						tests.push(newTape)
 						tests.push(newTape.split("").reverse().join(""))
+					}
+				}
+			}break;
+			case ODD_LENGTH_TEST:{
+				while (tests.length<2000) {
+					var newTape = binaryToTape(startingValue++)
+					if (newTape.length%2===1) {
+						tests.push(newTape)
+						tests.push(newTape.split("").reverse().join(""))
+					}
+				}
+			}break;
+			case BINARY_TEST:{
+				while (tests.length<2000) {
+					var newTape = binaryToTape(startingValue++)
+					if (newTape[newTape.length-1]!==RED) {
+						tests.push(newTape)
+					}
+				}
+			}break;
+			case TWO_NUMBERS_TEST:{
+				while (tests.length<2000) {
+					var newTape = binaryToTape(startingValue++)
+					var newTape2 = binaryToTape(startingValue++)
+					if (Math.random()<=0.5) {
+						newTape2=newTape
+					}
+					if (newTape[newTape.length-1]!==RED&&newTape2[newTape2.length-1]!==RED) {
+						tests.push(newTape+GREEN+newTape2)
+					}
+				}
+			}break;
+			case SUBSTRING_TEST:{
+				startingValue=1000
+				while (tests.length<2000) {
+					var tape = binaryToTape(startingValue)
+					var pos1 = Math.floor(Math.random()*(tape.length/2))
+					var pos2 = (tape.length/2)+Math.floor(Math.random()*(tape.length/2))
+					tests.push(tape.substring(0,pos1)+YELLOW+tape.substring(pos1,pos2)+YELLOW+tape.substring(pos2,tape.length-1))
+					startingValue+=141
+				}
+			}break;
+			case UPPERCASE_CHARACTER_TEST:{
+				while (tests.length<2000) {
+					var length=Math.floor(Math.random()*15)
+					var word = ""
+					for (var i=0;i<length;i++) {
+						word+=String.fromCharCode(Math.floor(Math.random()*26)+65)
+					}
+					tests.push(convertStringToTape(word))
+				}
+			}break;
+			case TWO_UNEQUAL_NUMBERS_TEST:{
+				while (tests.length<2000) {
+					var numb1 = Math.floor(Math.random()*512)
+					var numb2 = Math.floor(Math.random()*512)
+					var newTape = binaryToTape(numb1)
+					var newTape2 = binaryToTape(numb2)
+					if (newTape[newTape.length-1]!==RED&&newTape2[newTape2.length-1]!==RED&&numb1!==numb2) {
+						tests.push(newTape+GREEN+newTape2)
 					}
 				}
 			}break;
@@ -691,8 +1257,8 @@ function generateBotQueue() {
 			}break;
 			default:{
 				for (var i=0;i<MAX_VALUE;i++) {
-					tests.push(ConvertNumberToTape(startingValue++))
-					tests.push(ConvertNumberToTape(startingValue).split("").reverse().join(""))
+					tests.push(binaryToTape(startingValue++))
+					tests.push(binaryToTape(startingValue).split("").reverse().join(""))
 				}
 			}
 		}
@@ -709,7 +1275,6 @@ function generateBotQueue() {
 			completedStages[gameStage.name].complete=true
 			completedStages[gameStage.name].score=TESTSTEPS
 		}
-		//console.log("Test Steps: "+TESTSTEPS)
 	}
 }
 
@@ -722,11 +1287,9 @@ function getSimulatedBotResult(tape) {
 		runBot(true)
 		TESTSTEPS++
 		if (gameState===REVIEWING) {
-			//console.log("Rejected")
 			return false
 		}
 		if (gameState===FINISH) {
-			//console.log("Accepted")
 			return true
 		}
 		iterations++
@@ -742,15 +1305,15 @@ function getSimulatedBotResult(tape) {
 	return false
 }
 
-function ConvertNumberToTape(val) {
+function binaryToTape(val) {
 	var remainingVal = val
 	var tape = ""
 	while (remainingVal>0) {
 		var mask = remainingVal&1
 		if (mask===1) {
-			tape=BLUE+tape
+			tape=tape+BLUE
 		} else {
-			tape=RED+tape
+			tape=tape+RED
 		}
 		remainingVal=remainingVal>>>1
 	}
@@ -777,10 +1340,9 @@ function setNextSquare(offsetX,offsetY) {
 }
 
 function runBot(testing) {
-	//console.log(new Date().getTime())
 	if ((lastGameUpdate<new Date().getTime()||testing)&&gameSpeed!==-1) {
+		GHOST_BOT_TAPE=BOT_TAPE
 		lastGameUpdate=new Date().getTime()+gameSpeed
-		//console.log("Update")
 		var nextSquare = {}
 		switch (BOT_DIR) {
 			case UP:{
@@ -815,15 +1377,12 @@ function runBot(testing) {
 		if (nextSquare!==undefined&&(nextSquare.direction!==undefined||nextSquare.type==="EXIT")) {
 			switch (nextSquare.type) {
 				case "BRANCH":{
-					//console.log("Branch found")
 					if (BOT_TAPE[0]===nextSquare.color1) {
-						//console.log("Matches color1")
 						//Move towards left side of the branch.
 						BOT_DIR = LeftOf(nextSquare.direction)
 						ConsumeTape()
 					} else
 					if (BOT_TAPE[0]===nextSquare.color2) {
-						//console.log("Matches color2")
 						//Move towards left side of the branch.
 						BOT_DIR = RightOf(nextSquare.direction)
 						ConsumeTape()
@@ -843,7 +1402,6 @@ function runBot(testing) {
 					endARound()
 				}break;
 			}
-			//console.log("Direction is now "+BOT_DIR)
 		} else {
 			gameState = REVIEWING
 			BOT_STATE = DEAD
@@ -887,10 +1445,9 @@ function setupGame() {
 			FIRSTBOOT=false
 		}
 	}catch{}
-	//console.log(completedStages)
 	//loadStage(TUTORIAL4)
-	gameState=MAINMENU
-	//gameState=STARTUP
+	//gameState=MAINMENU
+	gameState=STARTUP
 }
 
 function setupTitleScreen() {
@@ -953,7 +1510,6 @@ function setMoveMode(mode) {
 }
 
 function clickEvent(e) {
-	//console.log(MENU.buttons)
 	if (e instanceof TouchEvent) {
 		MOBILE=true
 		e.preventDefault()
@@ -1029,7 +1585,6 @@ function clickEvent(e) {
 						} else {
 							ITEM_SELECTED=button.lastselected
 						}
-						//console.log(button)
 						setMoveMode(false)
 						return
 					}
@@ -1062,7 +1617,6 @@ function clickEvent(e) {
 		return;
 	}
 	
-	//console.log(getGridCoords(getMousePos(e)))
 	if ((ITEM_SELECTED!==undefined||DELETEMODE)&&!MOVEMODE) {
 		var clickCoords = getGridCoords(getMousePos(e))
 		if (coordsInBounds(clickCoords)) {
@@ -1070,7 +1624,6 @@ function clickEvent(e) {
 			DRAGGING = true
 			DRAG_X = clickCoords.x
 			DRAG_Y = clickCoords.y
-			//console.log(gameGrid)
 		}
 	}
 }
@@ -1176,7 +1729,6 @@ function loadStage(stage) {
 	} else {
 		if (completedStages[stage.name].data!==undefined) {
 			gameGrid = deepCopy(completedStages[stage.name].data)
-			//console.log(gameGrid)
 		}
 	}
 }
@@ -1202,7 +1754,6 @@ function step() {
 }
 
 function updateMouse(e) {
-	//console.log(getMousePos(e))
 	e.preventDefault()
 	var mousepos = getMousePos(e)
 	LAST_MOUSE_X=mousepos.x
@@ -1229,7 +1780,6 @@ function updateMouse(e) {
 function getMousePos(e) {
 	var rect = canvas.getBoundingClientRect();
 	var scale = canvas.height/canvas.clientHeight
-	//console.log(scale)
 	if (e.changedTouches) {
 		return {
 		  x: (e.changedTouches[0].clientX - rect.left) * scale,
@@ -1385,6 +1935,7 @@ function draw() {
 				DisplayMenu((canvas.width*0.33)*0+(canvas.width*0.15)+(canvas.width*0.01),108,EASYMENU,ctx)
 				DisplayMenu((canvas.width*0.33)*1+(canvas.width*0.15)+(canvas.width*0.02),108,MEDIUMMENU,ctx)
 				DisplayMenu((canvas.width*0.33)*2+(canvas.width*0.15)+(canvas.width*0.03),108,HARDMENU,ctx)
+				DisplayMenu((canvas.width*0.33)*2+(canvas.width*0.15)+(canvas.width*0.03),275,SANDBOXMENU,ctx)
 			}break;
 			case INFO:{
 				ctx.fillStyle="rgb(180,180,180)"
@@ -1592,7 +2143,7 @@ function RenderGameInfo(ctx) {
 			
 		}
 		if (BOT_START_TAPE!==undefined) {
-			RenderTape(canvas.width*0.75+8,16,canvas.width*0.25-16,ctx,BOT_TAPE)
+			RenderTape(canvas.width*0.75+8,16,canvas.width*0.25-16,ctx,GHOST_BOT_TAPE)
 		}
 		
 		
@@ -1755,6 +2306,21 @@ function drawTape(color,ctx,x,y,ySpacing,first=false,last=false,firstInRow=false
 	
 	ctx.fillText(color,x,y+4)
 }
+	
+function tapeToBinary(tape) {
+	var numb = 0;
+	for (var i=tape.length-1;i>=0;i--) {
+		if (tape[i]===RED) {
+			numb=numb<<1;
+			numb=numb|0
+		} else 
+		if (tape[i]===BLUE) {
+			numb=numb<<1;
+			numb=numb|1
+		}
+	}
+	return numb
+}
 
 function RenderTape(x,y,width,ctx,tape) {
 	var xOffset=width-24
@@ -1784,37 +2350,35 @@ function RenderTape(x,y,width,ctx,tape) {
 		}
 	}
 	
-	function interpretBinary(tape) {
-		var numb = 0;
-		for (var i=tape.length-1;i>=0;i--) {
-			if (tape[i]===RED) {
-				numb=numb<<1;
-				numb=numb|0
-			} else 
-			if (tape[i]===BLUE) {
-				numb=numb<<1;
-				numb=numb|1
-			}
-		}
-		return numb
-	}
-	
 	if (gameStage.display!==undefined) {
 		switch (gameStage.display) {
 			case BINARY:{
+				ctx.fillStyle="gray"
+				ctx.globalAlpha=0.8
+				ctx.fillRect(x,y+60,width,14)
+				ctx.globalAlpha=1
 				ctx.fillStyle="white"
-				ctx.fillText(interpretBinary(tape),x+xOffset+16,y+yOffset+16+4)
+				if (tape.includes(GREEN)) {
+					var numbs = tape.split(GREEN)
+					ctx.fillText(tapeToBinary(numbs[0])+","+tapeToBinary(numbs[1]),x+width/2,y+70)
+				} else {
+					ctx.fillText(tapeToBinary(tape),x+width/2,y+70)
+				}
 			}break;
 			case STRING:{
+				ctx.fillStyle="gray"
+				ctx.globalAlpha=0.8
+				ctx.fillRect(x,y+60,width,14)
+				ctx.globalAlpha=1
 				ctx.fillStyle="white"
 				var splitString=tape.split(YELLOW)
 				var finalString="\""
 				for (var i=0;i<splitString.length;i++) {
-					var binary = interpretBinary(splitString[i])
+					var binary = tapeToBinary(splitString[i])
 					finalString+=String.fromCharCode(binary)
 				}
 				finalString+="\""
-				ctx.fillText(finalString,x+xOffset+16,y+yOffset+16+4)
+				ctx.fillText(finalString,x+width/2,y+70)
 			}break;
 		}
 	}
@@ -2013,7 +2577,6 @@ function RenderConveyor(x,y,ctx,icon_definition,dir=0,background=undefined,grid=
 		if (grid.x<gameGrid[grid.y].length-1) {if (HasRelativeConnection(grid.x+1,grid.y+0,LEFT)){connections[RIGHT]=true}}
 		if (grid.y>0) {if (HasRelativeConnection(grid.x+0,grid.y-1,DOWN)){connections[UP]=true}}
 		if (grid.y<gameGrid.length-1) {if (HasRelativeConnection(grid.x+0,grid.y+1,UP)){connections[DOWN]=true}}
-		//console.log("Connections: "+JSON.stringify(connections))
 		DrawConnectedConveyor(x,y,ctx,connections,dir,scale)
 		DrawConnectedConveyor(x,y,ctx,connections,dir,scale,1)
 	}

@@ -256,9 +256,9 @@ function runTests() {
 		}(),true)
 	})
 	.it("Convert Number to Tape function works as expected. 0 bits=R, 1 bits=B",()=>{
-		expect(ConvertNumberToTape(4),"BRR","4=100=\"BRR\"")
-		expect(ConvertNumberToTape(24),"BBRRR","24=11000=\"BBRRR\"")
-		expect(ConvertNumberToTape(167),"BRBRRBBB","167=10100111=\"BRBRRBBB\"")
+		expect(binaryToTape(4),"RRB","4=100=\"BRR\"")
+		expect(binaryToTape(24),"RRRBB","24=11000=\"BBRRR\"")
+		expect(binaryToTape(167),"BBBRRBRB","167=10100111=\"BRBRRBBB\"")
 	}).showResults()
 	
 	
@@ -353,11 +353,53 @@ function runTests() {
 		expect(BOT_QUEUE.length===0,true,"Bot queue should be empty.")
 		gameState=TESTING
 		generateBotQueue()
-		//console.log(BOT_QUEUE)
 		expect(BOT_QUEUE.length===0,true,"There should be 0 bots in queue for a good level, as all bots are supposed to pass.")
 	})
 	.showResults()
 	
+	TestSuite = new describe("Basic Stage 5 - Back and Forth")
+	TestSuite
+	.beforeEach(()=>{
+		resetGame()
+	})
+	.it("accepts valid results",()=>{
+		loadStage(BSTAGE5)
+		expect(gameStage.accept("BBB"),false)
+		expect(gameStage.accept("BRB"),true)
+		expect(gameStage.accept("RBRBRB"),true)
+		expect(gameStage.accept("RBRBRBR"),true)
+		expect(gameStage.accept("RBRRRBR"),false)
+	})
+	
+	TestSuite = new describe("Basic Stage 7 - End-to-End")
+	TestSuite
+	.beforeEach(()=>{
+		resetGame()
+	})
+	.it("accepts valid results",()=>{
+		loadStage(BSTAGE7)
+		expect(gameStage.accept("BBB"),true)
+		expect(gameStage.accept("BRB"),true)
+		expect(gameStage.accept("RBRBRB"),false)
+		expect(gameStage.accept("RBRBRBR"),true)
+		expect(gameStage.accept("RBRRRBR"),true)
+		expect(gameStage.accept("BBBBRBBR"),false)
+	})
+	
+	TestSuite = new describe("Basic Stage 8 - Greatest Count")
+	TestSuite
+	.beforeEach(()=>{
+		resetGame()
+	})
+	.it("accepts valid results",()=>{
+		loadStage(BSTAGE8)
+		expect(gameStage.accept("BBBRR"),"BBB")
+		expect(gameStage.accept("BBRRR"),"RRR")
+		expect(gameStage.accept("RBRBRBR"),"RRRR")
+		expect(gameStage.accept("RBRBRBB"),"BBBB")
+		expect(gameStage.accept("RBRRRBR"),"RRRRR")
+		expect(gameStage.accept("BBBBRBBR"),"BBBBBB")
+	})
 	
 	TestSuite = new describe("Stage 2")
 	TestSuite
@@ -451,7 +493,6 @@ function runTests() {
 		expect(BOT_QUEUE.length===0,true,"Bot queue should be empty.")
 		gameState=TESTING
 		generateBotQueue()
-		//console.log(BOT_QUEUE)
 		expect(BOT_QUEUE.length===0,true,"There should be 0 bots in queue for a good level, as all bots are supposed to pass.")
 	})
 	.showResults()
@@ -464,6 +505,248 @@ function runTests() {
 		expect(colorToHex(245, 66, 221),"#f542dd")
 		expect(colorToHex(58, 79, 55),"#3a4f37")
 	}).showResults()
+	
+	TestSuite = new describe("Intermediate Stage 1 - Blue In Blue Out")
+	TestSuite
+	.beforeEach(()=>{
+		resetGame()
+		loadStage(ISTAGE1)
+	})
+	.it("accepts valid results",()=>{
+		expect(gameStage.accept("BBBRR"),"BBBRR")
+		expect(gameStage.accept("BBRRR"),"BBRRR")
+		expect(gameStage.accept("RBRBRBR"),"BBBRRRR")
+		expect(gameStage.accept("RBRBRBB"),"BBBBRRR")
+		expect(gameStage.accept("RBRRRBR"),"BBRRRRR")
+		expect(gameStage.accept("BBBBRBBR"),"BBBBBBRR")
+	})
+	.it("the generator doesn't fail",()=>{
+		gameState=TESTING
+		generateBotQueue()
+	})
+	
+	TestSuite = new describe("Intermediate Stage 2 - Blue In Blue Out")
+	TestSuite
+	.beforeEach(()=>{
+		resetGame()
+		loadStage(ISTAGE2)
+	})
+	.it("accepts valid results",()=>{
+		expect(gameStage.accept("BBBRR"),false)
+		expect(gameStage.accept("BBRRR"),false)
+		expect(gameStage.accept("RBRBRBR"),false)
+		expect(gameStage.accept("RBRBRB"),true)
+		expect(gameStage.accept("RBRRRBRB"),true)
+		expect(gameStage.accept(""),true)
+	})
+	.it("the generator doesn't fail",()=>{
+		gameState=TESTING
+		generateBotQueue()
+	})
+	
+	TestSuite = new describe("Intermediate Stage 3 - Add One")
+	TestSuite
+	.beforeEach(()=>{
+		resetGame()
+		loadStage(ISTAGE3)
+	})
+	.it("accepts valid results",()=>{
+		expect(gameStage.accept("RRBBB"),"BRBBB")
+		expect(gameStage.accept("RRRBB"),"BRRBB")
+		expect(gameStage.accept("RRBRBB"),"BRBRBB")
+		expect(gameStage.accept("BRBRB"),"RBBRB")
+		expect(gameStage.accept("BRRRBRB"),"RBRRBRB")
+		expect(gameStage.accept(""),"B")
+	})
+	.it("the generator doesn't fail",()=>{
+		gameState=TESTING
+		generateBotQueue()
+	})
+	
+	TestSuite = new describe("Intermediate Stage 4 - String Length")
+	TestSuite
+	.beforeEach(()=>{
+		resetGame()
+		loadStage(ISTAGE4)
+	})
+	.it("accepts valid results",()=>{
+		expect(gameStage.accept("RRBBB"),"RB")
+		expect(gameStage.accept("RRRBB"),"BB")
+		expect(gameStage.accept("RRBRBB"),"BB")
+		expect(gameStage.accept("BRBRB"),"RB")
+		expect(gameStage.accept("BRRRBRB"),"RRB")
+		expect(gameStage.accept(""),"")
+	})
+	.it("the generator doesn't fail",()=>{
+		gameState=TESTING
+		generateBotQueue()
+	})
+	
+	TestSuite = new describe("Intermediate Stage 5 - NoLemonsNoMelon")
+	TestSuite
+	.beforeEach(()=>{
+		resetGame()
+		loadStage(ISTAGE5)
+	})
+	.it("accepts valid results",()=>{
+		expect(gameStage.accept("RRBBB"),false)
+		expect(gameStage.accept("BBRBB"),true)
+		expect(gameStage.accept("RRBRBB"),false)
+		expect(gameStage.accept("BRBRB"),true)
+		expect(gameStage.accept("BRRRBRB"),false)
+		expect(gameStage.accept("BBBRRBBB"),true)
+		expect(gameStage.accept(""),true)
+	})
+	.it("the generator doesn't fail",()=>{
+		gameState=TESTING
+		generateBotQueue()
+	})
+	
+	TestSuite = new describe("Intermediate Stage 6 - Is Equal To")
+	TestSuite
+	.beforeEach(()=>{
+		resetGame()
+		loadStage(ISTAGE6)
+	})
+	.it("accepts valid results",()=>{
+		expect(gameStage.accept("RRBGBB"),false)
+		expect(gameStage.accept("BBGBB"),true) //
+		expect(gameStage.accept("RRBGRBB"),false)
+		expect(gameStage.accept("BRGRB"),false) //
+		expect(gameStage.accept("BRBGBRB"),true) //
+		expect(gameStage.accept("BBBGRBBB"),false)
+		expect(gameStage.accept("G"),true) //
+	})
+	.it("the generator doesn't fail",()=>{
+		gameState=TESTING
+		generateBotQueue()
+	})
+	
+	TestSuite = new describe("Intermediate Stage 7 - Substring")
+	TestSuite
+	.beforeEach(()=>{
+		resetGame()
+		loadStage(ISTAGE7)
+	})
+	.it("accepts valid results",()=>{
+		expect(gameStage.accept("RYRBBYB"),"RBB")
+		expect(gameStage.accept("BBYBYB"),"B") //
+		expect(gameStage.accept("RYRBRBBY"),"RBRBB")
+		expect(gameStage.accept("BRYYRB"),"") //
+		expect(gameStage.accept("BRYBBRYB"),"BBR") //
+		expect(gameStage.accept("BBBYRBBYB"),"RBB")
+		expect(gameStage.accept("YY"),"") //
+	})
+	.it("the generator doesn't fail",()=>{
+		gameState=TESTING
+		generateBotQueue()
+	})
+	
+	TestSuite = new describe("Intermediate Stage 8 - Reversal")
+	TestSuite
+	.beforeEach(()=>{
+		resetGame()
+		loadStage(ISTAGE8)
+	})
+	.it("accepts valid results",()=>{
+		expect(gameStage.accept("RRBBB"),"BBBRR")
+		expect(gameStage.accept("BBBB"),"BBBB") //
+		expect(gameStage.accept("RRBRBB"),"BBRBRR")
+		expect(gameStage.accept("BRRBRR"),"RRBRRB") //
+		expect(gameStage.accept("BRBRRBRB"),"BRBRRBRB") //
+		expect(gameStage.accept("BBBBBRBBB"),"BBBRBBBBB")
+		expect(gameStage.accept(""),"") //
+	})
+	.it("the generator doesn't fail",()=>{
+		gameState=TESTING
+		generateBotQueue()
+	})
+	
+	TestSuite = new describe("Advanced Stage 1 - Right in the Center")
+	TestSuite
+	.beforeEach(()=>{
+		resetGame()
+		loadStage(ASTAGE1)
+	})
+	.it("accepts valid results",()=>{
+		expect(gameStage.accept("RRBB"),"RRYBB")
+		expect(gameStage.accept("BBBB"),"BBYBB") 
+		expect(gameStage.accept("RRBRBB"),"RRBYRBB")
+		expect(gameStage.accept("BRRBRR"),"BRRYBRR") 
+		expect(gameStage.accept("BRBRRBRB"),"BRBRYRBRB") 
+		expect(gameStage.accept("BBBBBRBBBB"),"BBBBBYRBBBB")
+		expect(gameStage.accept(""),"Y") 
+	})
+	.it("the generator doesn't fail",()=>{
+		gameState=TESTING
+		generateBotQueue()
+	})
+	
+	TestSuite = new describe("Advanced Stage 2 - toLowerCase")
+	TestSuite
+	.beforeEach(()=>{
+		resetGame()
+		loadStage(ASTAGE2)
+	})
+	.it("accepts valid results",()=>{
+		expect(gameStage.accept("RRRBRRBYBRRBRRB"),"RRRBRBBYBRRBRBB")
+	})
+	.it("the generator doesn't fail",()=>{
+		gameState=TESTING
+		generateBotQueue()
+	})
+	
+	TestSuite = new describe("Advanced Stage 3 - Addition")
+	TestSuite
+	.beforeEach(()=>{
+		resetGame()
+		loadStage(ASTAGE3)
+	})
+	.it("accepts valid results",()=>{
+		expect(gameStage.accept("BRBBGRB"),"BBBB")
+		expect(gameStage.accept("RBGRB"),"RRB") 
+		expect(gameStage.accept("BGR"),"B")
+		expect(gameStage.accept("RGBB"),"BB") 
+		expect(gameStage.accept("BRBGRRBRB"),"BRRBB") 
+		expect(gameStage.accept("BBBBBGRBBBB"),"BRBBBB")
+	})
+	.it("the generator doesn't fail",()=>{
+		gameState=TESTING
+		generateBotQueue()
+	})
+	
+	TestSuite = new describe("Advanced Stage 4 - The Great Conversion")
+	TestSuite
+	.beforeEach(()=>{
+		resetGame()
+		loadStage(ASTAGE4)
+	})
+	.it("accepts valid results",()=>{
+		expect(gameStage.accept("RRBBRBBBR"),"RBGBBGRBBBBG")
+	})
+	.it("the generator doesn't fail",()=>{
+		gameState=TESTING
+		generateBotQueue()
+	})
+	
+	TestSuite = new describe("Advanced Stage 5 - Compare")
+	TestSuite
+	.beforeEach(()=>{
+		resetGame()
+		loadStage(ASTAGE5)
+	})
+	.it("accepts valid results",()=>{
+		expect(gameStage.accept("BRBBGRB"),"BRBB")
+		expect(gameStage.accept("RBGRBB"),"RBB") 
+		expect(gameStage.accept("BGR"),"B")
+		expect(gameStage.accept("RGBB"),"BB") 
+		expect(gameStage.accept("BRBGRRBRB"),"RRBRB") 
+		expect(gameStage.accept("BBBBBGRBBBB"),"BBBBB")
+	})
+	.it("the generator doesn't fail",()=>{
+		gameState=TESTING
+		generateBotQueue()
+	})
 	
 	console.log("----------------------")
 	console.log("ALL TESTS: "+totalTestsPassed+" passed, "+(totalTests-totalTestsPassed)+" failed, "+totalTests+" total")
@@ -482,10 +765,9 @@ function runGame() {
 		step()
 		draw()
 	},1000/60)
-	console.log("Running")
 }
 
-var RUNTESTS = true;
+var RUNTESTS = false;
 
 loadScript("image_data.js",gameLoader)
 
