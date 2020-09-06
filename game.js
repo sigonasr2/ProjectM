@@ -82,6 +82,8 @@ var SCENEALPHA = 1.0
 var CURRENTTIMELINE = []
 var SCENE_DRAW = ()=>{}
 
+var FIRSTBOOT = true
+
 const WAITING = 0;
 const RUNNING = 1;
 const REVIEWING = 2;
@@ -93,6 +95,7 @@ const TITLE = 7;
 const STARTUP = 8;
 const INFO = 9;
 
+const ONE_TEST = -1;
 const NORMAL_TEST = 0;
 const EVEN_LENGTH_TEST = 1; //Only generate even length tapes.
 
@@ -210,9 +213,9 @@ var KEY_BRIDGED_BELT = ["Shift"]
 var CONVEYOR_BUILD_BUTTON = {img:ID_CONVEYOR,x:-1,y:-1,w:-1,h:-1,lastselected:DEF_CONVEYOR,tooltip:"Conveyor Belt\nMoves bots in a direction.\n\nHold (Shift) to bridge over other belts",mobileTooltip:"Conveyor Belt\nMoves bots in a direction.\n\nHold button down to toggle bridge mode.\nUsed to bridge over other belts"}
 var BRANCH_BUILD_BUTTON = {img:ID_BRANCH,x:-1,y:-1,w:-1,h:-1,submenu_buttons:[DEF_BRANCHUP_RB,DEF_BRANCHUP_BR,DEF_BRANCHUP_GY,DEF_BRANCHUP_YG,DEF_BRANCHUP_PPI,DEF_BRANCHUP_PIP,DEF_BRANCHUP_BLGR,DEF_BRANCHUP_GRBL],lastselected:undefined,default:DEF_BRANCHUP_RB,tooltip:"Branch\nReads next tape and moves bot in the\nmatching color direction.\n\nMoves bot forward and does not consume\ntape if no match found."}
 var WRITER_BUILD_BUTTON = {img:ID_WRITER,x:-1,y:-1,w:-1,h:-1,submenu_buttons:[DEF_WRITERRIGHT_R,DEF_WRITERRIGHT_B,DEF_WRITERRIGHT_G,DEF_WRITERRIGHT_Y,DEF_WRITERRIGHT_P,DEF_WRITERRIGHT_PI,DEF_WRITERRIGHT_BL,DEF_WRITERRIGHT_GR],lastselected:undefined,default:DEF_WRITERRIGHT_R,tooltip:"Writer\nWrites a color to the end of the tape."}
-var ROTATE_CLOCKWISE_BUTTON = {img:ID_ROTATE_CLOCKWISE,x:-1,y:-1,w:-1,h:-1,cb:rotateClockwise,tooltip:"Rotate selection clockwise."
+var ROTATE_CLOCKWISE_BUTTON = {img:ID_ROTATE_CLOCKWISE,x:-1,y:-1,w:-1,h:-1,cb:rotateClockwise,tooltip:"Rotate selection clockwise.\nYou can use WASD, HJKL, Arrow Keys\nto rotate quickly.",mobileTooltip:"Rotate selection clockwise."
 }
-var ROTATE_COUNTERCLOCKWISE_BUTTON = {img:ID_ROTATE_COUNTERCLOCKWISE,x:-1,y:-1,w:-1,h:-1,cb:rotateCounterClockwise,tooltip:"Rotate selection counter-clockwise."
+var ROTATE_COUNTERCLOCKWISE_BUTTON = {img:ID_ROTATE_COUNTERCLOCKWISE,x:-1,y:-1,w:-1,h:-1,cb:rotateCounterClockwise,tooltip:"Rotate selection counter-clockwise.\nYou can use WASD, HJKL, Arrow Keys\nto rotate quickly.",mobileTooltip:"Rotate selection counter-clockwise."
 }
 
 
@@ -247,6 +250,20 @@ var INFO_HOME_BUTTON = {
 		goHome()
 	}
 }
+
+
+var CREDITS=">CREDITS\n\n"
++"First, thanks to Javidx9 for putting on a wonderful coding jam!\n"
++"I had a lot of fun working on this game.\n"
++"\n"
++"This game is heavily inspired by Manufactoria, and thus\n"
++"it is appropriate to give credit to the developer of Manufactoria\n"
++">(@pleasingfungus) Nicholas Feinberg - Creator of Manufactoria\n"
++"\n"
++">Music is from an excerpt from the Shostakovich - Symphony No.9 Performance\n"
++"\n"
++"All graphics were designed by myself\n"
++">(@sigonasr2) Joshua Sigona - Creator of The Great Conversion\n"
 
 
 var MENU = {
@@ -466,15 +483,16 @@ var STAGE3 = {
 	}
 var TUTORIAL1 = {
 	name:"Conveyors!",
-	objective:"To convert your robots, you must send them from the entrance to the exit. Select a belt and send robots to where they truly belong.",
+	objective:"To convert your robots, you must send them from the entrance to the exit. Select a belt and send robots to where they truly belong.  Press the Play button to test your machine!",
 	level:createGrid(5,5,4,2),
 	start:{x:0,y:2},
 	locked:[BRANCH_BUILD_BUTTON,WRITER_BUILD_BUTTON],
 	tutorial:true,
 	accept:(tape)=>{
 			return true;
-		}
-	}
+		},
+	generator:ONE_TEST
+}
 var TUTORIAL2 = {
 	name:"Branches",
 	objective:"We have to make sure we are sending robots that meet our needs! Use the branch to filter out robots that start with a red signal. Send only those to the exit!",
@@ -629,7 +647,7 @@ function decideIfWrongBot(isSupposedToBeAccepted,tape) {
 	}
 }
 
-function generateBotQueue(generator=NORMAL_TEST) {
+function generateBotQueue() {
 	BOT_QUEUE=[]
 	RESULT=true
 	TESTSTEPS=0
@@ -639,6 +657,12 @@ function generateBotQueue(generator=NORMAL_TEST) {
 		var MAX_VALUE=1000
 		var startingValue=0
 		var tests = []
+		var generator
+		if (gameStage.generator!==undefined) {
+			generator=gameStage.generator
+		} else {
+			generator=NORMAL_TEST
+		}
 		switch (generator) {
 			case EVEN_LENGTH_TEST:{
 				while (tests.length<2000) {
@@ -648,7 +672,10 @@ function generateBotQueue(generator=NORMAL_TEST) {
 						tests.push(newTape.split("").reverse().join(""))
 					}
 				}
-			}
+			}break;
+			case ONE_TEST:{
+				tests = ["RRR"]
+			}break;
 			default:{
 				for (var i=0;i<MAX_VALUE;i++) {
 					tests.push(ConvertNumberToTape(startingValue++))
@@ -843,6 +870,8 @@ function setupGame() {
 		completedStages = JSON.parse(localStorage.getItem("game"))
 		if (!completedStages) {
 			completedStages={}
+		} else {
+			FIRSTBOOT=false
 		}
 	}catch{}
 	//console.log(completedStages)
@@ -931,7 +960,12 @@ function clickEvent(e) {
 	}
 	if (gameState===TITLE) {
 		if (new Date().getTime()-TITLESCREENTIMELINE>=15000) {
-			gameState=MAINMENU
+			if (FIRSTBOOT) {
+				loadStage(TUTORIAL1)
+				gameState=WAITING
+			} else {
+					gameState=MAINMENU
+			}
 		}
 	}
 	if (gameState===MAINMENU) {
@@ -1347,6 +1381,20 @@ function draw() {
 				ctx.fill()
 				ctx.stroke()
 				ctx.drawImage(IMAGE_DATA[ID_HOME],12,8)
+				var split = CREDITS.split("\n")
+				for (var i=0;i<split.length;i++) {
+					var string = split[i]
+					if (split[i][0]===">") {
+						string=split[i].substring(1)
+						ctx.font="bold 16px 'Zilla Slab', serif"
+					} else {
+						ctx.font="16px 'Zilla Slab', serif"
+					}
+					ctx.textAlign = "center"
+					ctx.fillStyle="black"
+					
+					ctx.fillText(string,canvas.width/2,i*20+36)
+				}
 			}break;
 			case STARTUP:{
 				ctx.fillStyle="black"
