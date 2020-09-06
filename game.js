@@ -307,6 +307,7 @@ function goHome() {
 	GRID_X=20
 	GRID_Y=20
 	ITEM_SELECTED=undefined
+	MOUSEDOWN=false
 	endARound()
 	for (var button of MENU.buttons) {
 		if (button.submenu_buttons) {
