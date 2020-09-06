@@ -91,6 +91,10 @@ const PAUSED = 5;
 const MAINMENU = 6;
 const TITLE = 7;
 const STARTUP = 8;
+const INFO = 9;
+
+const NORMAL_TEST = 0;
+const EVEN_LENGTH_TEST = 1; //Only generate even length tapes.
 
 var ISTESTING = false;
 var MOUSEOVERTIME = -1
@@ -131,6 +135,7 @@ var BOT_DID_NOT_REACH_EXIT = false
 var TOOLTIPDISPLAYED = undefined
 var MOVEMODE = false
 var STARTDRAG = undefined
+var TEST_RANDOM_TAPE = ""
 
 var MESSAGETIMER = -1
 var EXPECTED = true //True means the bot was supposed to accepted, false means the bot was supposed to be rejected.
@@ -219,10 +224,30 @@ var RESET_BUTTON = {img:ID_RESET,x:-1,y:-1,w:-1,h:-1,cb:resetSimulation,tooltip:
 }
 var DELETE_BUTTON = {img:ID_DELETE,x:-1,y:-1,w:-1,h:-1,cb:toggleDeleteMode,tooltip:"Remove a piece on the field."
 }
-var HOME_BUTTON = {img:ID_HOME,x:-1,y:-1,w:-1,h:-1,cb:goHome,tooltip:"Go back to the level selection menu."
+var HOME_BUTTON = {img:ID_HOME,x:-1,y:-1,w:-1,h:-1,cb:goHome,tooltip:"Go back to the level selection menu.\n\nYour progress will be saved automatically."
 }
 var MOVE_BUTTON = {img:ID_MOVE_BUTTON,x:2,y:2,w:32,h:32,cb:toggleMoveMode,tooltip:"Scroll the view area."
 }
+
+var AUDIO_BUTTON = {
+	bounds:{x:4,y:4,w:40,h:40},
+	cb:()=>{
+		currentSound.muted=!currentSound.muted
+	}
+}
+var INFO_BUTTON = {
+	bounds:{x:4,y:44,w:40,h:40},
+	cb:()=>{
+		gameState=INFO
+	}
+}
+var INFO_HOME_BUTTON = {
+	bounds:{x:4,y:4,w:40,h:40},
+	cb:()=>{
+		goHome()
+	}
+}
+
 
 var MENU = {
 	visible:false,
@@ -271,11 +296,7 @@ function runGameSimulation(){
 			if (BOT_QUEUE.length>0) {
 				BOT_TAPE=BOT_QUEUE[0]
 			} else {
-				BOT_TAPE=ConvertNumberToTape(Math.floor(Math.random()*1000))
-				if (Math.random()<0.5) {
-					BOT_TAPE=BOT_TAPE.split("").reverse().join("")
-				}
-				EXPECTED=gameStage.accept(BOT_TAPE)
+				BOT_TAPE=TEST_RANDOM_TAPE
 			}
 			BOT_START_TAPE=BOT_TAPE
 			BOT_X=gameStage.start.x
@@ -424,8 +445,8 @@ var STAGE2 = {
 var STAGE3 = {
 	name:"Balance",
 	objective:"Accept bots with the same number of red and blue.",
-	level:createGrid(15,15,14,7),
-	start:{x:0,y:7},
+	level:createGrid(15,15,14,14),
+	start:{x:0,y:0},
 	accept:(tape)=>{
 			var reds=0;
 			var blues=0;
@@ -567,10 +588,12 @@ function resetGame() {
 	BOT_QUEUE=[]
 	lastGameUpdate=0
 	completedStages={}
+	MENU.visible=false
 }
 
-function decideIfWrongBot(wrongBot,isSupposedToBeAccepted,tape) {
+function decideIfWrongBot(isSupposedToBeAccepted,tape) {
 	var result;
+	var wrongBot=false;
 	switch (typeof(isSupposedToBeAccepted)) {
 		case "string":{
 			if (getSimulatedBotResult(tape)) {
@@ -605,7 +628,7 @@ function decideIfWrongBot(wrongBot,isSupposedToBeAccepted,tape) {
 	}
 }
 
-function generateBotQueue() {
+function generateBotQueue(generator=NORMAL_TEST) {
 	BOT_QUEUE=[]
 	RESULT=true
 	TESTSTEPS=0
@@ -614,17 +637,29 @@ function generateBotQueue() {
 		//Iterate up to...15 RED/BLUE combinations.
 		var MAX_VALUE=1000
 		var startingValue=0
-		while (startingValue<MAX_VALUE) {
-			var tape=ConvertNumberToTape(startingValue++)
-			//console.log(tape)
-			var wrongBot=false //Set to true if a bot that's supposed to pass fails, or a bot that's supposed to fail passes.
-			var isSupposedToBeAccepted=gameStage.accept(tape)
-			decideIfWrongBot(wrongBot,isSupposedToBeAccepted,tape)
-			var reversedTape=tape.split("").reverse().join("")
-			//console.log(tape)
-			var wrongBot=false //Set to true if a bot that's supposed to pass fails, or a bot that's supposed to fail passes.
-			var isSupposedToBeAccepted=gameStage.accept(reversedTape)
-			decideIfWrongBot(wrongBot,isSupposedToBeAccepted,reversedTape)
+		var tests = []
+		switch (generator) {
+			case EVEN_LENGTH_TEST:{
+				while (tests.length<2000) {
+					var newTape = ConvertNumberToTape(startingValue++)
+					if (newTape.length%2===0) {
+						tests.push(newTape)
+						tests.push(newTape.split("").reverse().join(""))
+					}
+				}
+			}
+			default:{
+				for (var i=0;i<MAX_VALUE;i++) {
+					tests.push(ConvertNumberToTape(startingValue++))
+					tests.push(ConvertNumberToTape(startingValue).split("").reverse().join(""))
+				}
+			}
+		}
+		TEST_RANDOM_TAPE = tests[Math.floor(Math.random()*tests.length)]
+		for (var i=0;i<tests.length;i++) {
+			 //Set to true if a bot that's supposed to pass fails, or a bot that's supposed to fail passes.
+			var isSupposedToBeAccepted=gameStage.accept(tests[i])
+			decideIfWrongBot(isSupposedToBeAccepted,tests[i])
 			if (BOT_QUEUE.length>=3) {
 				break;
 			}
@@ -640,7 +675,7 @@ function generateBotQueue() {
 function getSimulatedBotResult(tape) {
 	var simulatedBoard = deepCopy(gameGrid)
 	resetBot(gameStage.start.x,gameStage.start.y,TESTING,tape)
-	const MAX_ITERATIONS=10000
+	const MAX_ITERATIONS=2000
 	var iterations=0
 	while (iterations<MAX_ITERATIONS) {
 		runBot(true)
@@ -654,6 +689,11 @@ function getSimulatedBotResult(tape) {
 			return true
 		}
 		iterations++
+	}
+	if (BOT_QUEUE.length===0) {
+		BOT_DID_NOT_REACH_EXIT=true
+		RESULT=false
+		BOT_QUEUE.push(tape)
 	}
 	if (iterations===MAX_ITERATIONS) {
 		TESTSTEPS=-1
@@ -788,6 +828,7 @@ function setupGame() {
 	canvas = document.createElement("canvas");
 	canvas.width=568
 	canvas.height=320
+	canvas.style.height="100%"
 	document.getElementById("game").appendChild(canvas)
 	canvas.addEventListener("mousemove",updateMouse)
 	canvas.addEventListener("mousedown",clickEvent)
@@ -892,6 +933,13 @@ function clickEvent(e) {
 			gameState=MAINMENU
 		}
 	}
+	if (gameState===MAINMENU) {
+		if (MouseOverBounds(AUDIO_BUTTON.bounds)) {AUDIO_BUTTON.cb();return;}
+		if (MouseOverBounds(INFO_BUTTON.bounds)) {INFO_BUTTON.cb();return;}
+	}
+	if (gameState===INFO) {
+		if (MouseOverBounds(INFO_HOME_BUTTON.bounds)) {INFO_HOME_BUTTON.cb();return;}
+	}
 	
 	if (MENU.visible) {
 		for (var button of MENU.buttons) {
@@ -951,9 +999,13 @@ function clickEvent(e) {
 		setMoveMode(true)
 	}
 	
-	if (!MOBILE&&gridModeIsAvailable()&&e.button!==0) {
-		setMoveMode(true)
+	if (!MOBILE&&e.button!==0) {
 		e.preventDefault()
+		if (gridModeIsAvailable()) {
+			setMoveMode(true)
+		} else {
+			setMoveMode(false)
+		}
 	}
 	
 	if (MOVEMODE) {
@@ -1000,7 +1052,9 @@ function deleteObject(coords,def) {
 }
 function placeObject(coords,def) {
 	if (notAForbiddenObject(coords)) {
-		if (gameGrid[coords.y][coords.x].direction!==undefined&&gameGrid[coords.y][coords.x].type&&gameGrid[coords.y][coords.x].type==="BELT"&&BRIDGEDBELT) {
+		if (gameGrid[coords.y][coords.x].direction!==undefined&&gameGrid[coords.y][coords.x].type&&gameGrid[coords.y][coords.x].type==="BELT"
+		&&(gameGrid[coords.y][coords.x].direction===getClockwiseDirection(ITEM_DIRECTION)||gameGrid[coords.y][coords.x].direction===getCounterClockwiseDirection(ITEM_DIRECTION))
+		&&BRIDGEDBELT) {
 			gameGrid[coords.y][coords.x]={...gameGrid[coords.y][coords.x],direction2:ITEM_DIRECTION}
 		} else {
 			var newObj={...def,direction:ITEM_DIRECTION}
@@ -1029,9 +1083,11 @@ function releaseEvent(e) {
 	if (gridModeIsAvailable()&&ITEM_SELECTED===undefined) {
 		setMoveMode(false)
 	}
-	if (!MOBILE&&gridModeIsAvailable()&&e.button!==0) {
-		setMoveMode(false)
+	if (!MOBILE&&e.button!==0) {
 		e.preventDefault()
+		if (gridModeIsAvailable()) {
+			setMoveMode(false)
+		}
 	}
 	
 	if (MOVEMODE) {
@@ -1124,15 +1180,17 @@ function updateMouse(e) {
 
 function getMousePos(e) {
 	var rect = canvas.getBoundingClientRect();
+	var scale = canvas.height/canvas.clientHeight
+	//console.log(scale)
 	if (e.changedTouches) {
 		return {
-		  x: e.changedTouches[0].clientX - rect.left,
-		  y: e.changedTouches[0].clientY - rect.top
+		  x: (e.changedTouches[0].clientX - rect.left) * scale,
+		  y: (e.changedTouches[0].clientY - rect.top) * scale
 		};
 	} else {
 		return {
-		  x: e.clientX - rect.left,
-		  y: e.clientY - rect.top
+		  x: (e.clientX - rect.left) * scale,
+		  y: (e.clientY - rect.top) * scale
 		};
 	}
 }
@@ -1263,10 +1321,31 @@ function draw() {
 				SCENE_DRAW(ctx)
 			}break;
 			case MAINMENU:{
+				ctx.fillStyle="rgb(180,180,180)"
+				ctx.strokeStyle="black"
+				ctx.beginPath()
+					ctx.ellipse(24,24,20,20,0,0,2*Math.PI)
+				ctx.fill()
+				ctx.stroke()
+				ctx.beginPath()
+					ctx.ellipse(24,64,20,20,0,0,2*Math.PI)
+				ctx.fill()
+				ctx.stroke()
+				ctx.drawImage((currentSound.muted)?IMAGE_NOAUDIO_BUTTON:IMAGE_AUDIO_BUTTON,8,8)
+				ctx.drawImage(IMAGE_INFO_BUTTON,8,48)
 				DisplayMenu(canvas.width/2,8,TUTORIALMENU,ctx)
 				DisplayMenu((canvas.width*0.33)*0+(canvas.width*0.15)+(canvas.width*0.01),108,EASYMENU,ctx)
 				DisplayMenu((canvas.width*0.33)*1+(canvas.width*0.15)+(canvas.width*0.02),108,MEDIUMMENU,ctx)
 				DisplayMenu((canvas.width*0.33)*2+(canvas.width*0.15)+(canvas.width*0.03),108,HARDMENU,ctx)
+			}break;
+			case INFO:{
+				ctx.fillStyle="rgb(180,180,180)"
+				ctx.strokeStyle="black"
+				ctx.beginPath()
+					ctx.ellipse(24,24,20,20,0,0,2*Math.PI)
+				ctx.fill()
+				ctx.stroke()
+				ctx.drawImage(IMAGE_DATA[ID_HOME],12,8)
 			}break;
 			case STARTUP:{
 				ctx.fillStyle="black"
