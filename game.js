@@ -1287,7 +1287,7 @@ function generateBotQueue() {
 function getSimulatedBotResult(tape) {
 	var simulatedBoard = deepCopy(gameGrid)
 	resetBot(gameStage.start.x,gameStage.start.y,TESTING,tape)
-	const MAX_ITERATIONS=2000
+	const MAX_ITERATIONS=10000
 	var iterations=0
 	while (iterations<MAX_ITERATIONS) {
 		runBot(true)
