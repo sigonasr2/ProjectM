@@ -1514,7 +1514,7 @@ function setMoveMode(mode) {
 }
 
 function clickEvent(e) {
-	if (e instanceof TouchEvent) {
+	if (window.TouchEvent && e instanceof TouchEvent) {
 		MOBILE=true
 		e.preventDefault()
 	} else {
@@ -1683,7 +1683,7 @@ function getGridCoords(pos) {
 }
 
 function releaseEvent(e) {
-	if (e instanceof TouchEvent) {
+	if (window.TouchEvent && e instanceof TouchEvent) {
 		e.preventDefault()
 	}
 	
