@@ -264,7 +264,7 @@ var INFO_BUTTON = {
 var INFO_HOME_BUTTON = {
 	bounds:{x:4,y:4,w:40,h:40},
 	cb:()=>{
-		goHome()
+		goHome(false)
 	}
 }
 
@@ -299,8 +299,10 @@ function saveLevelData() {
 	localStorage.setItem("game",JSON.stringify(completedStages))
 }
 
-function goHome() {
-	saveLevelData()
+function goHome(save=true) {
+	if (save) {
+		saveLevelData()
+	}
 	MENU.visible=false
 	BRIDGEDBELT=false
 	setMoveMode(false)
