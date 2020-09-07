@@ -784,7 +784,7 @@ var ISTAGE7 = {
 }
 var ISTAGE8 = {
 	name:"Reversal",
-	objective:`Reverse the input string. Ex: ${BLUE}${BLUE}${RED}${BLUE}${BLUE} -> ${BLUE}${BLUE}${RED}${BLUE}${BLUE}${RED}${RED}${RED}`,
+	objective:`Reverse the input string. Ex: ${RED}${RED}${RED}${BLUE}${BLUE}${RED}${BLUE}${BLUE} -> ${BLUE}${BLUE}${RED}${BLUE}${BLUE}${RED}${RED}${RED}`,
 	level:createGrid(11,11,10,10),
 	start:{x:0,y:0},
 	accept:(tape)=>{
